@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#e9e1d1"/><stop offset="0.72" stop-color="#c9b590"/><stop offset="1" stop-color="#867b67"/>
+</linearGradient>
+<radialGradient id="glow" cx="42%" cy="32%" r="55%">
+<stop offset="0" stop-color="#f5e9d0" stop-opacity="0.85"/><stop offset="1" stop-color="#f5e9d0" stop-opacity="0"/>
+</radialGradient>
+<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer><feComposite operator="over" in2="SourceGraphic"/></filter>
+</defs>
+<rect width="1600" height="1200" fill="url(#sky)"/>
+<rect width="1600" height="1200" fill="url(#glow)"/>
+<g><rect x="0" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="145" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="291" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="436" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="582" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="727" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="873" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="1018" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="1164" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="1309" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/><rect x="1455" y="0" width="64" height="1200" fill="#000000" opacity="0.2" transform="skewX(-8)"/></g>
+<rect y="984" width="1600" height="216" fill="#867b67" opacity="0.9"/>
+<rect width="1600" height="1200" fill="#ffffff" opacity="0.02" filter="url(#grain)"/>
+<text x="36" y="1170" font-family="monospace" font-size="17" fill="#ffffff" opacity="0.28">podmien na: assets/img/real-05.jpg</text>
+</svg>
