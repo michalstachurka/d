@@ -9,10 +9,21 @@
 <meta property="og:description" content="Pergole, ogrody zimowe, werandy i szyby przesuwne — przestrzeń zewnętrzna dopasowana do domu, pogody i codziennego życia.">
 <meta property="og:image" content="assets/img/hero.jpg">
 <meta property="og:type" content="website">
-<link rel="preload" href="assets/fonts/Marcellus-400-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/Marcellus-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/BodoniModa-400-italic-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/BodoniModa-400-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/BigShouldersDisplay-700-normal-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/BigShouldersDisplay-700-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/HankenGrotesk-var-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./assets/vendor/three/three.module.js",
+    "three/examples/jsm/controls/OrbitControls.js": "./assets/vendor/three/examples/jsm/controls/OrbitControls.js",
+    "three/examples/jsm/environments/RoomEnvironment.js": "./assets/vendor/three/examples/jsm/environments/RoomEnvironment.js"
+  }
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23161513'/%3E%3Cg stroke='%23B97F52' stroke-width='2'%3E%3Cline x1='7' y1='6' x2='7' y2='26'/%3E%3Cline x1='13' y1='6' x2='13' y2='26'/%3E%3Cline x1='19' y1='6' x2='19' y2='26'/%3E%3Cline x1='25' y1='6' x2='25' y2='26'/%3E%3C/g%3E%3C/svg%3E">
 </head>
 <body>
@@ -86,7 +97,7 @@
     <p class="hero__eyebrow reveal-line"><span>Pergole · Ogrody zimowe · Szyby przesuwne</span></p>
     <h1 class="hero__title">
       <span class="line"><span>Cień, światło</span></span>
-      <span class="line"><span>i architektura</span></span>
+      <span class="line"><span>i <em>architektura</em></span></span>
       <span class="line"><span>w&nbsp;jednej <br class="mobile-only">konstrukcji.</span></span>
     </h1>
     <p class="hero__lead reveal-line"><span>Projektujemy i montujemy pergole, werandy i przeszklone ogrody zimowe,
@@ -102,6 +113,24 @@
     <p class="hero__meta hero__meta--right">lamele 0–90°</p>
   </div>
 </section>
+
+<!-- ============ MARQUEE ============ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span>Pergole bioklimatyczne</span><i></i>
+    <span>Lamele solarne</span><i></i>
+    <span>Screeny osłonowe</span><i></i>
+    <span>Zabudowy boczne</span><i></i>
+    <span>Oświetlenie LED</span><i></i>
+    <span>Automatyka pogodowa</span><i></i>
+    <span>Pergole bioklimatyczne</span><i></i>
+    <span>Lamele solarne</span><i></i>
+    <span>Screeny osłonowe</span><i></i>
+    <span>Zabudowy boczne</span><i></i>
+    <span>Oświetlenie LED</span><i></i>
+    <span>Automatyka pogodowa</span><i></i>
+  </div>
+</div>
 
 <!-- ============ MANIFEST / O FIRMIE ============ -->
 <section class="manifest section--ivory" id="o-firmie">
@@ -304,6 +333,80 @@
     </div>
     <div class="offer__progress" aria-hidden="true" id="offerProgress">
       <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KONFIGURATOR 3D ============ -->
+<section class="pergola3d" id="konfigurator-3d">
+  <div class="container">
+    <p class="eyebrow eyebrow--light" data-reveal>Konfigurator 3D</p>
+    <h2 class="section-title section-title--light" data-reveal>Zaprojektuj<br><em>swoją pergolę.</em></h2>
+    <p class="section-lead section-lead--light" data-reveal>Ustaw moduły, wymiary, kolory i oświetlenie. Obróć model
+    przeciągnięciem i zobacz efekt, zanim cokolwiek zamówisz.</p>
+
+    <div class="pergola3d__module" data-reveal>
+      <div class="pergola3d__stage">
+        <div class="pergola3d__canvas" id="pergolaMount" aria-busy="true"></div>
+        <button type="button" class="pergola3d__options-toggle" id="pergolaOptionsToggle"
+                aria-expanded="false" aria-controls="pergolaPanel">
+          Opcje
+        </button>
+        <div class="pergola3d__stagefoot">
+          <button type="button" class="pergola3d__spin" id="pergolaSpin" aria-pressed="true">
+            <span class="pergola3d__spin-dot" aria-hidden="true"></span>Animacja ruchu
+          </button>
+          <span class="mono-note" id="pergolaSpec">4.0 × 3.2 × 2.6 m · 35°</span>
+        </div>
+      </div>
+
+      <div class="pergola3d__panel" id="pergolaPanel">
+        <div class="pergola3d__panel-head">
+          <span class="pergola3d__label">Opcje konfiguracji</span>
+          <button type="button" class="pergola3d__panel-close" id="pergolaPanelClose" aria-label="Zamknij opcje">✕</button>
+        </div>
+
+        <div class="pergola3d__group">
+          <span class="pergola3d__label">Moduły</span>
+          <div class="pergola3d__pills" id="pergolaModules" role="group" aria-label="Liczba modułów">
+            <button type="button" data-modules="1" aria-pressed="true">1 moduł</button>
+            <button type="button" data-modules="2" aria-pressed="false">2 moduły</button>
+          </div>
+        </div>
+
+        <div id="pergolaWidths"></div>
+
+        <label class="pergola3d__slider">
+          <span class="pergola3d__label">Wysięg · <b id="pergolaDepthVal">3.2</b> m</span>
+          <input type="range" id="pergolaDepth" min="2.5" max="4.5" step="0.1" value="3.2">
+        </label>
+        <label class="pergola3d__slider">
+          <span class="pergola3d__label">Wysokość · <b id="pergolaHeightVal">2.6</b> m</span>
+          <input type="range" id="pergolaHeight" min="2.2" max="3.2" step="0.05" value="2.6">
+        </label>
+        <label class="pergola3d__slider">
+          <span class="pergola3d__label">Otwarcie lameli · <b id="pergolaAngleVal">35</b>°</span>
+          <input type="range" id="pergolaAngle" min="0" max="120" step="1" value="35">
+        </label>
+
+        <div class="pergola3d__group">
+          <span class="pergola3d__label">Kolor konstrukcji</span>
+          <div class="pergola3d__swatches" id="pergolaFrameColor" role="group" aria-label="Kolor konstrukcji"></div>
+        </div>
+        <div class="pergola3d__group">
+          <span class="pergola3d__label">Kolor lameli</span>
+          <div class="pergola3d__swatches" id="pergolaSlatColor" role="group" aria-label="Kolor lameli"></div>
+        </div>
+
+        <div class="pergola3d__group">
+          <span class="pergola3d__label">Oświetlenie LED · można łączyć</span>
+          <div class="pergola3d__pills">
+            <button type="button" id="pergolaLedLinear" aria-pressed="false">Liniowe · rynny</button>
+            <button type="button" id="pergolaLedSpots" aria-pressed="false">Punktowe · lamele</button>
+          </div>
+        </div>
+      </div>
+      <div class="pergola3d__scrim" id="pergolaScrim"></div>
     </div>
   </div>
 </section>
@@ -570,25 +673,25 @@
     </div>
     <div class="tech__items">
       <article class="tech__item" data-reveal>
-        <h3>Szyby przesuwne</h3>
+        <h3><span>Szyby przesuwne</span><i class="arrow" aria-hidden="true">↗</i></h3>
         <p>Hartowane tafle 10 mm osłaniają taras lub werandę przed wiatrem, deszczem i chłodem,
         nie odbierając widoku na ogród. Segmenty przesuwają się po dyskretnych prowadnicach.</p>
         <p class="mono-note">szkło czyste lub dymione · 10 mm · profile także DB 703</p>
       </article>
       <article class="tech__item" data-reveal>
-        <h3>Oświetlenie LED</h3>
+        <h3><span>Oświetlenie LED</span><i class="arrow" aria-hidden="true">↗</i></h3>
         <p>Ciepłe, liniowe światło zintegrowane z lamelami i ramą. Ściemniasz je płynnie —
         od pełnej jasności do nastroju późnego wieczoru.</p>
         <p class="mono-note">ściemnianie 0–100% · ciepła barwa · linia światła w konstrukcji</p>
       </article>
       <article class="tech__item" data-reveal>
-        <h3>Automatyka</h3>
+        <h3><span>Automatyka</span><i class="arrow" aria-hidden="true">↗</i></h3>
         <p>Lamele, screeny i światło obsłużysz pilotem albo z aplikacji. Scenariusze łączą wszystko
         w jedno dotknięcie: „wieczór", „upał", „film na tarasie".</p>
         <p class="mono-note">pilot · smartfon · scenariusze pogodowe</p>
       </article>
       <article class="tech__item" data-reveal>
-        <h3>Czujniki pogodowe</h3>
+        <h3><span>Czujniki pogodowe</span><i class="arrow" aria-hidden="true">↗</i></h3>
         <p>Pierwsze krople — lamele się domykają. Silny wiatr — screeny zjeżdżają w bezpieczną pozycję.
         Pergola pilnuje się sama, także gdy nie ma Cię w domu.</p>
         <p class="mono-note">deszcz → dach zamknięty · wiatr → osłony schowane · mróz → ochrona mechanizmów</p>
@@ -673,5 +776,6 @@
 </footer>
 
 <script src="js/main.js" defer></script>
+<script type="module" src="js/pergola-configurator.js"></script>
 </body>
 </html>

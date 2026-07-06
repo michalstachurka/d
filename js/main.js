@@ -59,6 +59,7 @@
     document.documentElement.classList.add('has-smooth');
     window.addEventListener('wheel', (e) => {
       if (e.ctrlKey) return; // zoom
+      if (e.target.closest && e.target.closest('[data-lenis-prevent]')) return; // konfigurator 3D: zoom modelu
       e.preventDefault();
       const delta = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY;
       target = clamp(target + delta, 0, maxScroll());
@@ -251,6 +252,19 @@
       document.documentElement.style.setProperty('--frame-color', sw.dataset.color);
     });
   });
+
+  /* ---------- Tilt 3D: karty realizacji (desktop) ---------- */
+  if (finePointer && !prefersReduced) {
+    $$('.work').forEach((card) => {
+      card.addEventListener('mousemove', (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        card.style.transform = `perspective(900px) rotateX(${(-py * 8).toFixed(2)}deg) rotateY(${(px * 8).toFixed(2)}deg)`;
+      });
+      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    });
+  }
 
   /* ---------- Formularz (bez backendu: mailto) ---------- */
   const form = $('#contactForm');

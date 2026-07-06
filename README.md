@@ -80,30 +80,63 @@ Formularz działa bez backendu — składa wiadomość i otwiera program pocztow
 (`mailto:`). Do wysyłki bez klienta poczty podłącz np. Formspree/Basin albo własny
 endpoint: w `js/main.js`, sekcja „Formularz", zamień `mailto` na `fetch(...)`.
 
+## Konfigurator 3D pergoli
+
+Sekcja „Konfigurator 3D" (zaraz pod Ofertą) to działający model 3D pergoli
+lamelowej (Three.js) sterowany suwakami: moduły, szerokość, wysięg, wysokość,
+kąt lameli, kolor konstrukcji/lameli, LED liniowe i punktowe (można łączyć),
+animacja ruchu (domyślnie włączona).
+
+- **Bez frameworka i bez npm/build stepu** — three.js jest zvendorowany
+  lokalnie w `assets/vendor/three/` (moduły ESM), spięty przez natywną
+  `<script type="importmap">` w `index.html`. Żadnego CDN.
+- `js/pergola-canvas.js` — silnik 3D (verbatim port logiki geometrii/kamery/
+  oświetlenia z dostarczonej specyfikacji React, bez zmian w zachowaniu).
+- `js/pergola-configurator.js` — UI (suwaki, próbniki, przełączniki) w
+  czystym JS, dopasowane do design systemu strony.
+- Na mobile panel opcji to wysuwany bottom sheet (przycisk „Opcje” na kadrze,
+  maks. 45% wysokości ekranu) — przy otwarciu strona doscrollowuje tak, by
+  cały render zmieścił się nad panelem.
+- Zoom kółkiem myszy aktywuje się dopiero po kliknięciu modelu (żeby nie
+  przechwytywać scrolla strony) — patrz `data-lenis-prevent` w
+  `js/main.js`, gdzie własny smooth-scroll świadomie robi wyjątek dla canvasu.
+
 ## Struktura
 
 ```
 index.html          — cała treść strony (PL)
 css/style.css       — design system (tokens na górze pliku), layout, animacje
 js/main.js          — preloader, smooth scroll, reveal, oferta pozioma,
-                      konfigurator, menu mobilne, parallax, formularz
-assets/fonts/       — Marcellus, Hanken Grotesk (variable), IBM Plex Mono (woff2, lokalnie)
+                      personalizacja (SVG), menu mobilne, parallax, tilt, formularz
+js/pergola-canvas.js        — silnik 3D konfiguratora (Three.js, bez frameworka)
+js/pergola-configurator.js  — UI konfiguratora spięte z silnikiem 3D
+assets/fonts/       — Bodoni Moda italic, Big Shoulders Display, Hanken Grotesk
+                      (variable), IBM Plex Mono — wszystkie woff2, lokalnie
+assets/vendor/three/ — three.js (moduł + OrbitControls + RoomEnvironment),
+                      zvendorowane z npm, ładowane przez importmap
 assets/img/         — tu wgraj zdjęcia .jpg (patrz tabela wyżej)
 assets/img/placeholders/ — awaryjne placeholdery SVG
 ```
 
 ## Decyzje projektowe (skrót)
 
-- **Typografia**: Marcellus (nagłówki — inskrypcyjny, architektoniczny charakter),
-  Hanken Grotesk (tekst), IBM Plex Mono (adnotacje „techniczne" jak z rysunku
-  architektonicznego). Fonty serwowane lokalnie.
-- **Paleta**: ciepły grafit `#161513`, kość słoniowa `#F1EBE0`, piasek `#E3D8C4`,
-  ciepły szary `#8C8578`, akcent miedziany `#B97F52` — wyłącznie jako akcent.
+- **Typografia — rytm dwóch krojów**: elegancki **Bodoni Moda** (kursywa) jako
+  głos podstawowy nagłówków + surowy, kondensowany **Big Shoulders Display**
+  (bold, uppercase) dla słów-akcentów (`<em>`) — miękkie przechodzi w
+  strukturalne w tej samej frazie, np. „Cień, światło i **ARCHITEKTURA**
+  w jednej konstrukcji.” Logo i numeracja oferty również w Big Shoulders
+  Display. Hanken Grotesk zostaje krojem tekstowym, IBM Plex Mono — adnotacje
+  „techniczne” jak z rysunku architektonicznego.
+- **Paleta**: głęboki grafit `#14120F`, kość słoniowa `#F1EBE0`, terakotowy
+  piasek `#D9A874`, miedź `#B97F52` (akcent główny) + **rdza/oksydowany
+  metal `#C1502A`** (akcent drugi — marquee, hover w Technologii).
+- **Ruch**: pasek-marquee z kategoriami oferty (czyste CSS keyframes),
+  przechył 3D kart w Realizacjach (mousemove, desktop), wiersze ze strzałką
+  (↗) w Technologii — obok istniejącego sticky-scrollu Oferty i konfiguratora
+  SVG w Personalizacji.
 - **Motyw przewodni**: lamela i światło między lamelami — preloader (kurtyna
   z 5 lameli), przełącznik menu, progres oferty, favicon.
 - **Oferta**: poziomy sticky-scroll na desktopie (8 scen), na mobile pozioma
   karuzela ze scroll-snap.
-- **Personalizacja**: interaktywny schemat SVG pergoli budowany warstwami
-  (konstrukcja → lamele → zabudowy → LED → automatyka → czujniki) + próbki koloru.
 - **Dostępność**: skip-link, focus-visible, aria, pełne wsparcie
-  `prefers-reduced-motion` (preloader i animacje wyłączone).
+  `prefers-reduced-motion` (preloader, marquee i animacje wyłączone).
