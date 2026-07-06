@@ -1,8 +1,8 @@
 # Świat Pergoli — strona www
 
-Autorska strona typu premium dla marki Świat Pergoli: pergole bioklimatyczne, pergole
-lamelowe solarne, screeny osłonowe, zabudowy boczne, oświetlenie LED, automatyka
-i czujniki pogodowe.
+Autorska strona typu premium dla marki Świat Pergoli: pergole bioklimatyczne i solarne,
+ogrody zimowe, werandy, szyby przesuwne, screeny osłonowe, zabudowy boczne,
+oświetlenie LED, automatyka i czujniki pogodowe.
 
 Statyczny stack — **HTML + CSS + vanilla JS**, zero zależności i bez build stepu.
 Wystarczy dowolny hosting plików statycznych.
@@ -34,10 +34,12 @@ i zapisz je pod poniższymi nazwami — **żadna edycja kodu nie jest potrzebna*
 | `assets/img/manifest.jpg` | Manifest / O firmie | detal światła między lamelami, pion | 4:5 |
 | `assets/img/offer-bioclimatic.jpg` | Oferta 01 | pergola bioklimatyczna, otwarte lamele | 4:3 |
 | `assets/img/offer-solar.jpg` | Oferta 02 | lamele solarne / PV w słońcu | 4:3 |
-| `assets/img/offer-screen.jpg` | Oferta 03 | screen ZIP opuszczony | 4:3 |
-| `assets/img/offer-side.jpg` | Oferta 04 | szkło przesuwne / lamele pionowe | 4:3 |
-| `assets/img/offer-led.jpg` | Oferta 05 | pergola nocą z LED | 4:3 |
-| `assets/img/offer-automation.jpg` | Oferta 06 | pilot / aplikacja / czujnik | 4:3 |
+| `assets/img/offer-garden-room.jpg` | Oferta 03 | ogród zimowy / weranda | 4:3 |
+| `assets/img/offer-screen.jpg` | Oferta 04 | screen ZIP opuszczony | 4:3 |
+| `assets/img/offer-sliding-glass.jpg` | Oferta 05 | hartowane szyby przesuwne | 4:3 |
+| `assets/img/offer-side.jpg` | Oferta 06 | zabudowy boczne / lamele pionowe | 4:3 |
+| `assets/img/offer-led.jpg` | Oferta 07 | pergola nocą z LED | 4:3 |
+| `assets/img/offer-automation.jpg` | Oferta 08 | pilot / aplikacja / czujnik | 4:3 |
 | `assets/img/real-01.jpg` | Realizacje | taras prywatny, pion | 4:5 |
 | `assets/img/real-02.jpg` | Realizacje | ogród / strefa wypoczynku | 4:3–16:10 |
 | `assets/img/real-03.jpg` | Realizacje | restauracja | 3:2 |
@@ -54,14 +56,19 @@ Wskazówki:
 - gdy wszystkie `.jpg` będą wgrane, katalog `assets/img/placeholders/` można usunąć
   wraz z atrybutami `onerror` w `index.html` (opcjonalnie — nie przeszkadzają).
 
+Aktualny zestaw wykorzystuje autentyczne materiały marki pobrane z
+`swiatpergoli.com` oraz profilu `instagram.com/swiatpergoli`. Najważniejsze kadry
+hero warto w przyszłości zastąpić wariantami o szerokości co najmniej 2400 px.
+
 ## Dane do uzupełnienia
 
 W kodzie są **placeholdery do podmiany** (wyszukaj w `index.html` i `js/main.js`):
 
-- `+48 000 000 000` → prawdziwy numer telefonu (3 miejsca w HTML),
 - `kontakt@swiatpergoli.com` → zweryfikuj adres e-mail (HTML + `js/main.js` w obsłudze formularza),
-- linki `facebook.com` / `instagram.com` → adresy profili firmy,
-- „obszar działania" w sekcji kontakt.
+- link `facebook.com` → adres profilu firmy.
+
+Numer telefonu, Instagram oraz obszar działania (Śląsk i Małopolska) zostały
+zweryfikowane na stronie i profilu marki.
 
 ## Formularz
 
@@ -90,7 +97,7 @@ assets/img/placeholders/ — awaryjne placeholdery SVG
   ciepły szary `#8C8578`, akcent miedziany `#B97F52` — wyłącznie jako akcent.
 - **Motyw przewodni**: lamela i światło między lamelami — preloader (kurtyna
   z 5 lameli), przełącznik menu, progres oferty, favicon.
-- **Oferta**: poziomy sticky-scroll na desktopie (6 scen), na mobile pozioma
+- **Oferta**: poziomy sticky-scroll na desktopie (8 scen), na mobile pozioma
   karuzela ze scroll-snap.
 - **Personalizacja**: interaktywny schemat SVG pergoli budowany warstwami
   (konstrukcja → lamele → zabudowy → LED → automatyka → czujniki) + próbki koloru.
