@@ -2,7 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, claude/plugin-install-setup-ao7jcy]
+    # Uwaga: gałęzią domyślną repo jest "claude/plugin-install-setup-ao7jcy",
+    # a środowisko github-pages dopuszcza deploy tylko z gałęzi domyślnej —
+    # push na "main" zawsze kończy się natychmiastowym błędem (nie z winy
+    # tego workflow). Ustaw main jako default branch w Settings, żeby to
+    # odwrócić, i wtedy dopisz "main" z powrotem tutaj.
+    branches: [claude/plugin-install-setup-ao7jcy]
   workflow_dispatch:
 
 permissions:
