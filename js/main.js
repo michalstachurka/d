@@ -205,53 +205,22 @@
     setOfferUI(p);
   };
 
-  // mobile: karuzela scroll-snap
-  if (offerTrack) {
-    offerTrack.addEventListener('scroll', () => {
-      if (isDesktopOffer()) return;
-      const p = offerTrack.scrollLeft / (offerTrack.scrollWidth - offerTrack.clientWidth || 1);
-      setOfferUI(clamp(p, 0, 1));
-    }, { passive: true });
+  // mobile: sceny odsłaniają się przy scrollu w dół; wskaźnik postępu
+  // podąża za tym, która scena jest aktualnie widoczna
+  const offerScenes = $$('.offer-scene');
+  if (offerScenes.length && 'IntersectionObserver' in window) {
+    const offerIO = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        en.target.classList.add('is-visible');
+        if (!isDesktopOffer()) {
+          const idx = offerScenes.indexOf(en.target);
+          setOfferUI(idx / Math.max(1, sceneCount - 1));
+        }
+      });
+    }, { threshold: 0.35 });
+    offerScenes.forEach((scene) => offerIO.observe(scene));
   }
-
-  /* ---------- Konfigurator pergoli ---------- */
-  const stepButtons = $$('.config__step');
-  const layers = ['layer-frame', 'layer-roof', 'layer-sides', 'layer-led', 'layer-auto', 'layer-sensors']
-    .map((id) => document.getElementById(id));
-  const configNote = $('#configNote');
-  const notes = [
-    '01 · kolor konstrukcji — wybierz próbkę, aby zmienić kolor ram',
-    '02 · zadaszenie — lamele obrotowe 0–90° albo lamele solarne',
-    '03 · zabudowy boczne — szkło przesuwne, screeny, lamele pionowe',
-    '04 · oświetlenie LED — linia ciepłego światła w ramie i lamelach',
-    '05 · automatyka — pilot, aplikacja i scenariusze pogodowe',
-    '06 · czujniki — deszcz, wiatr i temperatura pilnują tarasu',
-  ];
-  const setStep = (n) => {
-    stepButtons.forEach((b, i) => {
-      const active = i === n;
-      b.classList.toggle('is-active', active);
-      b.setAttribute('aria-pressed', String(active));
-      b.closest('li').classList.toggle('is-active', active);
-    });
-    layers.forEach((layer, i) => {
-      if (!layer) return;
-      layer.classList.toggle('is-on', i <= n);
-      layer.classList.toggle('is-current', i === n);
-    });
-    if (configNote) configNote.textContent = notes[n];
-  };
-  stepButtons.forEach((b) => b.addEventListener('click', () => setStep(+b.dataset.step)));
-  if (stepButtons.length) setStep(0);
-
-  $$('.swatch').forEach((sw) => {
-    sw.addEventListener('click', (e) => {
-      e.stopPropagation();
-      $$('.swatch').forEach((s) => s.classList.remove('is-active'));
-      sw.classList.add('is-active');
-      document.documentElement.style.setProperty('--frame-color', sw.dataset.color);
-    });
-  });
 
   /* ---------- Tilt 3D: karty realizacji (desktop) ---------- */
   if (finePointer && !prefersReduced) {

@@ -53,7 +53,7 @@
       <a href="#start">Start</a>
       <a href="#oferta">Oferta</a>
       <a href="#realizacje">Realizacje</a>
-      <a href="#personalizacja">Personalizacja</a>
+      <a href="#konfigurator-3d">Personalizacja</a>
       <a href="#o-firmie">O firmie</a>
       <a href="#kontakt">Kontakt</a>
     </nav>
@@ -73,7 +73,7 @@
     <a href="#start"><em>01</em>Start</a>
     <a href="#oferta"><em>02</em>Oferta</a>
     <a href="#realizacje"><em>03</em>Realizacje</a>
-    <a href="#personalizacja"><em>04</em>Personalizacja</a>
+    <a href="#konfigurator-3d"><em>04</em>Personalizacja</a>
     <a href="#o-firmie"><em>05</em>O firmie</a>
     <a href="#kontakt"><em>06</em>Kontakt</a>
   </nav>
@@ -411,141 +411,6 @@
   </div>
 </section>
 
-<!-- ============ PERSONALIZACJA ============ -->
-<section class="config section--ivory" id="personalizacja">
-  <div class="container">
-    <p class="eyebrow" data-reveal>Personalizacja</p>
-    <h2 class="section-title" data-reveal>Jedna konstrukcja.<br><em>Twoja przestrzeń.</em></h2>
-    <p class="section-lead" data-reveal>Pergolę składamy warstwami — jak dom. Wybierz krok, aby zobaczyć,
-    co możesz zdecydować sam.</p>
-
-    <div class="config__module" data-reveal>
-      <ol class="config__steps" id="configSteps">
-        <li class="is-active"><button type="button" class="config__step is-active" data-step="0" aria-pressed="true">
-          <em>01</em><strong>Kolor konstrukcji</strong><span>antracyt, grafit, biel — lub dowolny kolor z palety RAL, dopasowany do elewacji.</span>
-        </button>
-        <div class="config__swatches" role="group" aria-label="Kolory konstrukcji">
-          <button type="button" class="swatch is-active" data-color="#3a3d40" aria-label="Antracyt" style="--sw:#3a3d40"></button>
-          <button type="button" class="swatch" data-color="#232324" aria-label="Grafit" style="--sw:#232324"></button>
-          <button type="button" class="swatch" data-color="#e8e5de" aria-label="Biel" style="--sw:#e8e5de"></button>
-          <button type="button" class="swatch" data-color="#6d6c58" aria-label="Oliwka" style="--sw:#6d6c58"></button>
-        </div></li>
-        <li><button type="button" class="config__step" data-step="1" aria-pressed="false">
-          <em>02</em><strong>Zadaszenie lamelowe</strong><span>lamele obrotowe albo lamele solarne z modułami fotowoltaicznymi.</span>
-        </button></li>
-        <li><button type="button" class="config__step" data-step="2" aria-pressed="false">
-          <em>03</em><strong>Zabudowy boczne</strong><span>szkło przesuwne, screeny lub lamele pionowe — osobno dla każdej ściany.</span>
-        </button></li>
-        <li><button type="button" class="config__step" data-step="3" aria-pressed="false">
-          <em>04</em><strong>Oświetlenie LED</strong><span>liniowe światło w lamelach i ramie, ściemniane do nastroju wieczoru.</span>
-        </button></li>
-        <li><button type="button" class="config__step" data-step="4" aria-pressed="false">
-          <em>05</em><strong>Automatyka</strong><span>pilot, aplikacja w smartfonie i scenariusze sterowania pogodowego.</span>
-        </button></li>
-        <li><button type="button" class="config__step" data-step="5" aria-pressed="false">
-          <em>06</em><strong>Czujniki pogodowe</strong><span>deszcz, wiatr i temperatura — pergola reaguje, zanim zdążysz.</span>
-        </button></li>
-      </ol>
-
-      <figure class="config__drawing" aria-label="Schemat pergoli — podświetlane warstwy konfiguracji">
-        <svg id="pergolaSvg" viewBox="0 0 980 660" role="img" aria-hidden="true">
-          <!-- warstwa: konstrukcja -->
-          <g id="layer-frame" class="p-layer is-on">
-            <g class="p-frame" fill="var(--frame-color,#3a3d40)" stroke="none">
-              <rect x="152" y="262" width="14" height="300"/>
-              <rect x="632" y="262" width="14" height="300"/>
-              <rect x="326" y="182" width="12" height="288"/>
-              <rect x="806" y="182" width="12" height="288"/>
-            </g>
-            <g stroke="var(--frame-color,#3a3d40)" stroke-width="10" fill="none">
-              <path d="M159 266 L639 266"/>
-              <path d="M332 188 L812 188"/>
-              <path d="M159 266 L332 188"/>
-              <path d="M639 266 L812 188"/>
-            </g>
-            <g class="p-ground" stroke="currentColor" stroke-width="1" opacity=".5">
-              <path d="M120 578 L700 578 L880 492" fill="none" stroke-dasharray="3 6"/>
-            </g>
-          </g>
-          <!-- warstwa: lamele -->
-          <g id="layer-roof" class="p-layer">
-            <g class="p-louvers" stroke="currentColor" stroke-width="2" fill="var(--paper,#f1ebe0)">
-              <path d="M186 262 L200 262 L373 184 L359 184 Z"/>
-              <path d="M241 262 L255 262 L428 184 L414 184 Z"/>
-              <path d="M296 262 L310 262 L483 184 L469 184 Z"/>
-              <path d="M351 262 L365 262 L538 184 L524 184 Z"/>
-              <path d="M406 262 L420 262 L593 184 L579 184 Z"/>
-              <path d="M461 262 L475 262 L648 184 L634 184 Z"/>
-              <path d="M516 262 L530 262 L703 184 L689 184 Z"/>
-              <path d="M571 262 L585 262 L758 184 L744 184 Z"/>
-              <path d="M626 262 L640 262 L813 184 L799 184 Z"/>
-            </g>
-            <g class="p-sun" stroke="currentColor" stroke-width="1.2" opacity=".55">
-              <circle cx="890" cy="84" r="16" fill="none"/>
-              <path d="M890 56 v-12 M890 124 v-12 M862 84 h-12 M930 84 h-12 M870 64 l-8 -8 M918 104 l8 8 M910 64 l8 -8 M862 104 l-8 8" />
-            </g>
-          </g>
-          <!-- warstwa: zabudowy -->
-          <g id="layer-sides" class="p-layer">
-            <g class="p-glass" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity=".05">
-              <rect x="170" y="286" width="454" height="270"/>
-              <line x1="284" y1="286" x2="284" y2="556"/>
-              <line x1="398" y1="286" x2="398" y2="556"/>
-              <line x1="512" y1="286" x2="512" y2="556"/>
-              <line x1="170" y1="300" x2="624" y2="300"/>
-              <line x1="170" y1="542" x2="624" y2="542"/>
-            </g>
-            <g class="p-vertlam" stroke="currentColor" stroke-width="2.4" opacity=".85">
-              <line x1="652" y1="288" x2="712" y2="262" transform="translate(0,20)"/>
-              <line x1="652" y1="288" x2="712" y2="262" transform="translate(20,64)"/>
-              <line x1="652" y1="288" x2="712" y2="262" transform="translate(40,108)"/>
-              <line x1="652" y1="288" x2="712" y2="262" transform="translate(60,152)"/>
-            </g>
-          </g>
-          <!-- warstwa: LED -->
-          <g id="layer-led" class="p-layer">
-            <line class="p-led" x1="170" y1="276" x2="628" y2="276" stroke="var(--copper,#B97F52)" stroke-width="3" stroke-linecap="round"/>
-            <line class="p-led p-led--soft" x1="170" y1="276" x2="628" y2="276" stroke="var(--copper,#B97F52)" stroke-width="9" stroke-linecap="round" opacity=".25"/>
-            <g class="p-rays" stroke="var(--copper,#B97F52)" stroke-width="1" opacity=".5">
-              <line x1="240" y1="284" x2="228" y2="330"/>
-              <line x1="400" y1="284" x2="396" y2="332"/>
-              <line x1="560" y1="284" x2="570" y2="330"/>
-            </g>
-          </g>
-          <!-- warstwa: automatyka -->
-          <g id="layer-auto" class="p-layer">
-            <g stroke="currentColor" stroke-width="1.8" fill="none">
-              <rect x="64" y="380" width="44" height="82" rx="8"/>
-              <line x1="78" y1="446" x2="94" y2="446"/>
-            </g>
-            <g class="p-waves" stroke="var(--copper,#B97F52)" stroke-width="1.6" fill="none">
-              <path d="M120 396 q18 24 0 48"/>
-              <path d="M136 384 q30 36 0 72"/>
-              <path d="M152 372 q42 48 0 96"/>
-            </g>
-          </g>
-          <!-- warstwa: czujniki -->
-          <g id="layer-sensors" class="p-layer">
-            <g stroke="currentColor" stroke-width="1.8" fill="var(--paper,#f1ebe0)">
-              <rect x="800" y="150" width="26" height="20" rx="3"/>
-            </g>
-            <g class="p-waves" stroke="var(--copper,#B97F52)" stroke-width="1.6" fill="none">
-              <path d="M836 138 q14 16 0 32" transform="translate(6,4)"/>
-              <path d="M850 128 q22 26 0 52" transform="translate(6,4)"/>
-            </g>
-            <g class="p-drops" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".7">
-              <path d="M742 96 q4 8 0 12 q-4 -4 0 -12"/>
-              <path d="M762 76 q4 8 0 12 q-4 -4 0 -12"/>
-              <path d="M700 60 q16 6 32 0 M700 72 q16 6 32 0" opacity=".8"/>
-            </g>
-          </g>
-        </svg>
-        <figcaption class="mono-note config__note" id="configNote">01 · kolor konstrukcji — wybierz próbkę, aby zmienić kolor ram</figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
-
 <!-- ============ REALIZACJE ============ -->
 <section class="works" id="realizacje">
   <div class="container">
@@ -767,7 +632,7 @@
     <nav class="footer__nav" aria-label="Nawigacja w stopce">
       <a href="#oferta">Oferta</a>
       <a href="#realizacje">Realizacje</a>
-      <a href="#personalizacja">Personalizacja</a>
+      <a href="#konfigurator-3d">Personalizacja</a>
       <a href="#kontakt">Kontakt</a>
     </nav>
     <p class="footer__tag mono-note">pergole · ogrody zimowe · werandy · szyby przesuwne · screeny · automatyka</p>
