@@ -20,45 +20,49 @@ i lazy-loading zachowują się lepiej przez serwer.
 
 ## Podmiana zdjęć (najważniejsze!)
 
-Strona odwołuje się do zdjęć w `assets/img/*.jpg`. Tych plików **nie ma w repo** —
-do czasu ich wgrania każdy obraz automatycznie podstawia elegancki placeholder SVG
+Strona odwołuje się do zdjęć w `assets/img/*.jpg`. Gdy pliku nie ma (albo się nie
+wczyta), każdy obraz automatycznie podstawia elegancki placeholder SVG
 z `assets/img/placeholders/` (mechanizm `onerror` w `<img>`). Każdy placeholder ma
-w rogu podpis, jaki plik należy wgrać.
+w rogu podpis, jaki plik należy wgrać — **żadna edycja kodu nie jest potrzebna**,
+wystarczy zapisać zdjęcie pod wskazaną nazwą w `assets/img/`.
 
-Pobierz zdjęcia z obecnej strony swiatpergoli.com (lub z materiałów producenta)
-i zapisz je pod poniższymi nazwami — **żadna edycja kodu nie jest potrzebna**:
+10 slotów ma już przypisane unikalne, prawdziwe zdjęcia marki. 9 slotów celowo
+zostało na placeholderze — te same kadry pojawiały się w materiałach źródłowych
+po 2–3 razy (identyczne pliki), a pokazanie tego samego zdjęcia w kilku sekcjach
+jednej strony (np. Hero i Realizacje) wygląda tanio i podważa wiarygodność
+portfolio. Lepiej pokazać przemyślany placeholder niż powtórkę.
 
-| Plik | Sekcja | Sugerowany kadr | Proporcje |
-|---|---|---|---|
-| `assets/img/hero.jpg` | Hero (pełny ekran) | pergola nad tarasem o zmierzchu, szeroki kadr | 3:2, min. 2400 px |
-| `assets/img/manifest.jpg` | Manifest / O firmie | detal światła między lamelami, pion | 4:5 |
-| `assets/img/offer-bioclimatic.jpg` | Oferta 01 | pergola bioklimatyczna, otwarte lamele | 4:3 |
-| `assets/img/offer-solar.jpg` | Oferta 02 | lamele solarne / PV w słońcu | 4:3 |
-| `assets/img/offer-garden-room.jpg` | Oferta 03 | ogród zimowy / weranda | 4:3 |
-| `assets/img/offer-screen.jpg` | Oferta 04 | screen ZIP opuszczony | 4:3 |
-| `assets/img/offer-sliding-glass.jpg` | Oferta 05 | hartowane szyby przesuwne | 4:3 |
-| `assets/img/offer-side.jpg` | Oferta 06 | zabudowy boczne / lamele pionowe | 4:3 |
-| `assets/img/offer-led.jpg` | Oferta 07 | pergola nocą z LED | 4:3 |
-| `assets/img/offer-automation.jpg` | Oferta 08 | pilot / aplikacja / czujnik | 4:3 |
-| `assets/img/real-01.jpg` | Realizacje | taras prywatny, pion | 4:5 |
-| `assets/img/real-02.jpg` | Realizacje | ogród / strefa wypoczynku | 4:3–16:10 |
-| `assets/img/real-03.jpg` | Realizacje | restauracja | 3:2 |
-| `assets/img/real-04.jpg` | Realizacje | hotel / spa nocą, pion | 4:5 |
-| `assets/img/real-05.jpg` | Realizacje | apartament / taras na dachu | 4:3 |
-| `assets/img/real-06.jpg` | Realizacje | patio biurowe / komercyjne | 16:10 |
-| `assets/img/emotion.jpg` | Sekcja emocjonalna | wieczór pod pergolą, ciepłe światło, szeroki | 16:9, min. 2400 px |
-| `assets/img/tech.jpg` | Technologia | detal konstrukcji / LED | 4:3 |
-| `assets/img/cta.jpg` | Finalne CTA | zachód słońca nad tarasem, szeroki | 16:10, min. 2400 px |
+| Plik | Sekcja | Sugerowany kadr | Proporcje | Status |
+|---|---|---|---|---|
+| `assets/img/hero.jpg` | Hero (pełny ekran) | pergola / ogród zimowy o zmierzchu, szeroki kadr | 3:2 | ✅ gotowe |
+| `assets/img/manifest.jpg` | Manifest / O firmie | detal światła między lamelami, pion | 4:5 | brakuje |
+| `assets/img/offer-bioclimatic.jpg` | Oferta 01 | pergola bioklimatyczna, otwarte lamele | 4:3 | ✅ gotowe |
+| `assets/img/offer-solar.jpg` | Oferta 02 | lamele solarne / PV w słońcu | 4:3 | ✅ gotowe |
+| `assets/img/offer-garden-room.jpg` | Oferta 03 | ogród zimowy / weranda | 4:3 | brakuje |
+| `assets/img/offer-screen.jpg` | Oferta 04 | screen ZIP opuszczony | 4:3 | ✅ gotowe |
+| `assets/img/offer-sliding-glass.jpg` | Oferta 05 | hartowane szyby przesuwne | 4:3 | ✅ gotowe |
+| `assets/img/offer-side.jpg` | Oferta 06 | zabudowy boczne / lamele pionowe | 4:3 | ✅ gotowe |
+| `assets/img/offer-led.jpg` | Oferta 07 | pergola nocą z LED | 4:3 | ✅ gotowe |
+| `assets/img/offer-automation.jpg` | Oferta 08 | pilot / aplikacja / czujnik | 4:3 | ✅ gotowe |
+| `assets/img/real-01.jpg` | Realizacje | taras prywatny, pion | 4:5 | brakuje |
+| `assets/img/real-02.jpg` | Realizacje | ogród / strefa wypoczynku | 4:3–16:10 | brakuje |
+| `assets/img/real-03.jpg` | Realizacje | restauracja | 3:2 | brakuje |
+| `assets/img/real-04.jpg` | Realizacje | hotel / spa nocą, pion | 4:5 | brakuje |
+| `assets/img/real-05.jpg` | Realizacje | apartament / taras na dachu | 4:3 | ✅ gotowe |
+| `assets/img/real-06.jpg` | Realizacje | patio biurowe / komercyjne | 16:10 | ✅ gotowe |
+| `assets/img/emotion.jpg` | Sekcja emocjonalna | wieczór pod pergolą, ciepłe światło, szeroki | 16:9 | brakuje |
+| `assets/img/tech.jpg` | Technologia | detal konstrukcji / LED (zbliżenie) | 4:3 | brakuje |
+| `assets/img/cta.jpg` | Finalne CTA | zachód słońca nad tarasem, szeroki | 16:10 | brakuje |
 
 Wskazówki:
+- każdy plik powinien być **inny** — jedno zdjęcie w dwóch sekcjach tej samej
+  strony rzuca się w oczy przy przewijaniu; jeśli brakuje unikalnego kadru dla
+  danego slotu, zostaw placeholder zamiast dublować istniejące zdjęcie,
 - kadry mogą się różnić od sugerowanych — `object-fit: cover` przytnie je poprawnie,
 - kompresuj do JPG ~80% (docelowo można dodać WebP/AVIF przez `<picture>`),
+- hero, cta i emotion (pełnoekranowe) potrzebują szerokości min. 2400 px,
 - gdy wszystkie `.jpg` będą wgrane, katalog `assets/img/placeholders/` można usunąć
   wraz z atrybutami `onerror` w `index.html` (opcjonalnie — nie przeszkadzają).
-
-Aktualny zestaw wykorzystuje autentyczne materiały marki pobrane z
-`swiatpergoli.com` oraz profilu `instagram.com/swiatpergoli`. Najważniejsze kadry
-hero warto w przyszłości zastąpić wariantami o szerokości co najmniej 2400 px.
 
 ## Dane do uzupełnienia
 
