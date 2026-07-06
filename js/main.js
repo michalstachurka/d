@@ -170,57 +170,36 @@
     }
   };
 
-  /* ---------- Oferta: poziomy sticky scroll ---------- */
+  /* ---------- Oferta: przypięta sekcja, sceny wskakują na przemian
+     z lewej/prawej strony na środek w miarę scrollowania (desktop i mobile) ---------- */
   const offer = $('.offer');
-  const offerTrack = $('#offerTrack');
+  const offerScenes = $$('.offer-scene');
   const offerIndex = $('#offerIndex');
   const progressBars = $$('#offerProgress span');
-  const sceneCount = $$('.offer-scene').length;
-  const isDesktopOffer = () => window.innerWidth > 900;
+  const sceneCount = offerScenes.length;
+  let activeOfferIndex = -1;
 
   const sizeOffer = () => {
     if (!offer) return;
-    if (isDesktopOffer()) {
-      const extra = offerTrack.scrollWidth - window.innerWidth;
-      offer.style.height = `${window.innerHeight + extra}px`;
-    } else {
-      offer.style.height = '';
-      offerTrack.style.transform = '';
-    }
+    offer.style.height = `${window.innerHeight * sceneCount}px`;
   };
 
-  const setOfferUI = (progress) => {
-    const idx = clamp(Math.round(progress * (sceneCount - 1)), 0, sceneCount - 1);
+  const setOfferUI = (idx) => {
     if (offerIndex) offerIndex.textContent = String(idx + 1).padStart(2, '0');
     progressBars.forEach((b, i) => b.classList.toggle('is-active', i <= idx));
   };
 
   const onOfferScroll = () => {
-    if (!offer || !isDesktopOffer()) return;
+    if (!offer || !sceneCount) return;
     const total = offer.offsetHeight - window.innerHeight;
     if (total <= 0) return;
     const p = clamp((window.scrollY - offer.offsetTop) / total, 0, 1);
-    const extra = offerTrack.scrollWidth - window.innerWidth;
-    offerTrack.style.transform = `translate3d(${-p * extra}px, 0, 0)`;
-    setOfferUI(p);
+    const idx = clamp(Math.round(p * (sceneCount - 1)), 0, sceneCount - 1);
+    if (idx === activeOfferIndex) return;
+    activeOfferIndex = idx;
+    offerScenes.forEach((scene, i) => scene.classList.toggle('is-active', i === idx));
+    setOfferUI(idx);
   };
-
-  // mobile: sceny odsłaniają się przy scrollu w dół; wskaźnik postępu
-  // podąża za tym, która scena jest aktualnie widoczna
-  const offerScenes = $$('.offer-scene');
-  if (offerScenes.length && 'IntersectionObserver' in window) {
-    const offerIO = new IntersectionObserver((entries) => {
-      entries.forEach((en) => {
-        if (!en.isIntersecting) return;
-        en.target.classList.add('is-visible');
-        if (!isDesktopOffer()) {
-          const idx = offerScenes.indexOf(en.target);
-          setOfferUI(idx / Math.max(1, sceneCount - 1));
-        }
-      });
-    }, { threshold: 0.35 });
-    offerScenes.forEach((scene) => offerIO.observe(scene));
-  }
 
   /* ---------- Tilt 3D: karty realizacji (desktop) ---------- */
   if (finePointer && !prefersReduced) {

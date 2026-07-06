@@ -186,6 +186,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .section--ivory { background: var(--paper); color: var(--ink); }
 .section--sand { background: var(--sand); color: var(--ink); }
+/* Miedź na piaskowej terakocie ma zbyt mały kontrast — na tym tle
+   akcenty i tekst przechodzą na ciemny grafit zamiast miedzi. */
+.section--sand .eyebrow { color: var(--ink); }
+.section--sand .eyebrow::before { background: var(--ink); }
+.section--sand .section-title em { color: var(--ink); text-decoration: underline; text-decoration-color: var(--copper); text-decoration-thickness: .06em; text-underline-offset: .08em; }
+.section--sand .process__step em { color: var(--ink); opacity: .55; }
 
 /* ---------- Przyciski ---------- */
 .btn {
@@ -635,18 +641,29 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 .offer__count { font-size: 13px; letter-spacing: .2em; color: rgba(241,235,224,.6); }
 .offer__count span { color: var(--copper-hi); }
 .offer__track {
-  display: flex;
-  will-change: transform;
+  position: relative;
+  height: min(72svh, 720px);
 }
 .offer-scene {
-  position: relative;
-  flex: 0 0 100vw;
-  min-height: 72svh;
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   align-items: center;
   gap: clamp(16px, 2vw, 36px);
   padding: 0 var(--gutter);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .7s var(--ease-out), transform .7s var(--ease-out);
+}
+.offer-scene:nth-child(odd) { transform: translateX(-7%); }
+.offer-scene:nth-child(even) { transform: translateX(7%); }
+.offer-scene.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 .offer-scene__index {
   position: absolute;
@@ -1237,37 +1254,27 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   .manifest__media { margin-top: 44px; }
   .manifest__copy, .manifest__stat { margin-top: 40px; }
 
-  /* Oferta: kolejne sceny odsłaniają się przy scrollu w dół (zamiast
-     poziomej karuzeli) — .offer__track wraca do normalnego przepływu. */
-  .offer__sticky { position: static; height: auto; padding: 90px 0 40px; }
-  .offer__head { position: static; padding: 0 var(--gutter) 48px; }
-  .offer__track {
-    display: block;
-    order: 1;
-    transform: none !important;
-  }
+  /* Oferta: ten sam przypięty mechanizm co na desktopie (sceny wskakują
+     na przemian z lewej/prawej), tylko treść scen układa się w jednej
+     kolumnie i jest nieco bardziej zwarta, żeby zmieścić się w kadrze. */
+  .offer__head { padding-top: 84px; }
   .offer-scene {
     display: block;
-    min-height: 0;
     padding: 0 var(--gutter);
-    margin-bottom: 88px;
-    opacity: 0;
-    transform: translateY(44px);
-    transition: opacity .9s var(--ease-out), transform .9s var(--ease-out);
   }
-  .offer-scene.is-visible { opacity: 1; transform: none; }
-  .offer-scene:last-child { margin-bottom: 0; }
+  .offer-scene__body { padding-top: 8px; }
   .offer-scene__index {
     position: static;
     display: block;
     transform: none;
-    font-size: 4.6rem;
+    font-size: 3.4rem;
     -webkit-text-stroke: 1px rgba(241, 235, 224, .3);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
-  .offer-scene__media { margin-top: 30px; }
-  .offer-scene__media img { height: 46svh; }
-  .offer__progress { position: static; transform: none; justify-content: center; margin-top: 8px; margin-bottom: 8px; }
+  .offer-scene__copy { margin-top: 14px; }
+  .offer-scene__specs { margin-top: 18px; }
+  .offer-scene__media { margin-top: 20px; }
+  .offer-scene__media img { height: 30svh; }
 
   .works__grid { display: block; }
   .work { margin-top: 40px; }

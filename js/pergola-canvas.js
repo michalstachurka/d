@@ -77,8 +77,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
   };
   el.addEventListener("pointerdown", armZoom);
   el.addEventListener("pointerleave", disarmZoom);
-  // Faster orbit on touch screens
-  if (window.matchMedia("(pointer: coarse)").matches) controls.rotateSpeed = 1.8;
+  // Spokojniejszy, bardziej kontrolowany obrót przeciągnięciem
+  controls.rotateSpeed = window.matchMedia("(pointer: coarse)").matches ? 0.9 : 0.55;
   // maxPolarAngle is managed per-frame in the render loop
   controls.target.set(0, 1.3, 0);
   controls.autoRotate = false;
@@ -277,6 +277,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
   rebuild(initialParams);
   material.color.set(initialParams.frameColor);
   slatMaterial.color.set(initialParams.slatColor);
+  controls.autoRotate = initialParams.spin;
 
   const resize = () => {
     const { clientWidth: w, clientHeight: h } = el;
@@ -300,7 +301,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const p = paramsRef;
       if (p.spin && stateRef.slats) {
         const t = performance.now() / 1000;
-        const osc = ((Math.sin(t * 1.1) + 1) / 2) * 100; // 0..100 deg sweep
+        const osc = ((Math.sin(t * 0.35) + 1) / 2) * 100; // 0..100 deg sweep, spokojne tempo
         const rot = THREE.MathUtils.degToRad(osc);
         for (const sl of stateRef.slats) sl.rotation.x = rot;
       }
