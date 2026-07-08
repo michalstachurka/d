@@ -36,6 +36,7 @@ if (mount) {
     screens: { front: false, back: false, left: false, right: false },
     screenFabric: SCREEN_COLORS[0],
     glass: { front: false, back: false, left: false, right: false },
+    extraLegs: [], // dodatkowe nogi: [{x, z}] w metrach
     spin: true,
   };
 
@@ -57,6 +58,13 @@ if (mount) {
     const sf = SCREEN_COLORS.find((c) => c.id === q.get("sf")); if (sf) state.screenFabric = sf;
     const gl = q.get("gl") || "";
     SIDES.forEach((s) => { state.glass[s] = gl.includes(s[0]); });
+    const lg = q.get("lg") || "";
+    if (lg) {
+      state.extraLegs = lg.split(";").map((pair) => {
+        const [x, z] = pair.split("_").map(Number);
+        return { x, z };
+      }).filter((l) => Number.isFinite(l.x) && Number.isFinite(l.z)).slice(0, 12);
+    }
   };
   applyFromURL();
 
@@ -72,6 +80,7 @@ if (mount) {
     screens: { ...state.screens },
     screenColor: state.screenFabric.value,
     glass: { ...state.glass },
+    extraLegs: state.extraLegs.map((l) => ({ ...l })),
     spin: state.spin,
   });
 
@@ -90,6 +99,9 @@ if (mount) {
     if (scr) { q.set("scr", scr); q.set("sf", state.screenFabric.id); }
     const gl = SIDES.filter((s) => state.glass[s]).map((s) => s[0]).join("");
     if (gl) q.set("gl", gl);
+    if (state.extraLegs.length) {
+      q.set("lg", state.extraLegs.map((l) => `${l.x.toFixed(2)}_${l.z.toFixed(2)}`).join(";"));
+    }
     return `${window.location.origin}${window.location.pathname}?${q.toString()}#konfigurator-3d`;
   };
 
@@ -279,6 +291,54 @@ if (mount) {
   closeBtn.addEventListener("click", closePanel);
   scrim.addEventListener("click", closePanel);
 
+  /* ---------- Dodatkowe nogi (wskazywane kliknięciem na modelu) ---------- */
+  const addLegBtn = document.getElementById("pergolaAddLeg");
+  const clearLegsBtn = document.getElementById("pergolaClearLegs");
+  const legCountEl = document.getElementById("pergolaLegCount");
+  const legHint = document.getElementById("pergolaLegHint");
+  const POST = 0.14;
+  const syncLegs = () => { legCountEl.textContent = String(state.extraLegs.length); };
+  syncLegs();
+
+  // Dosuń kliknięty punkt do najbliższej krawędzi obrysu (nogi wspierają belkę).
+  const snapLeg = (x, z) => {
+    const totalW = state.widths.reduce((a, b) => a + b, 0);
+    const halfW = totalW / 2, halfD = state.depth / 2;
+    const dEdgeX = Math.min(Math.abs(x - halfW), Math.abs(x + halfW));
+    const dEdgeZ = Math.min(Math.abs(z - halfD), Math.abs(z + halfD));
+    if (dEdgeX < dEdgeZ) {
+      return { x: x > 0 ? halfW - POST / 2 : -halfW + POST / 2, z: clamp(z, -halfD + POST, halfD - POST) };
+    }
+    return { x: clamp(x, -halfW + POST, halfW - POST), z: z > 0 ? halfD - POST / 2 : -halfD + POST / 2 };
+  };
+  const stopPlacement = () => {
+    canvas.setPlacement(null);
+    addLegBtn.setAttribute("aria-pressed", "false");
+    legHint.hidden = true;
+  };
+  const onPlace = (rawX, rawZ) => {
+    const totalW = state.widths.reduce((a, b) => a + b, 0);
+    if (Math.abs(rawX) > totalW / 2 + 1.2 || Math.abs(rawZ) > state.depth / 2 + 1.2) return;
+    const leg = snapLeg(rawX, rawZ);
+    const idx = state.extraLegs.findIndex((l) => Math.hypot(l.x - leg.x, l.z - leg.z) < 0.35);
+    if (idx >= 0) state.extraLegs.splice(idx, 1); // klik w istniejącą nogę → usuń
+    else if (state.extraLegs.length < 12) state.extraLegs.push(leg);
+    syncLegs();
+    push();
+  };
+  addLegBtn.addEventListener("click", () => {
+    if (addLegBtn.getAttribute("aria-pressed") === "true") { stopPlacement(); return; }
+    addLegBtn.setAttribute("aria-pressed", "true");
+    legHint.hidden = false;
+    canvas.setPlacement(onPlace);
+    closePanel(); // na mobile odsłoń model do klikania
+  });
+  clearLegsBtn.addEventListener("click", () => {
+    state.extraLegs = [];
+    syncLegs();
+    push();
+  });
+
   /* ---------- Eksport PDF projektu ---------- */
   const exportBtn = document.getElementById("pergolaExport");
   const doc = {
@@ -333,6 +393,7 @@ if (mount) {
       ["Oświetlenie LED", ledLabel()],
       ["Rolety screen", screensLabel()],
       ["Przeszklenia", glassLabel()],
+      ["Dodatkowe nogi", state.extraLegs.length ? `${state.extraLegs.length} szt.` : "Standard (bez dodatkowych)"],
     ];
     doc.table.innerHTML = rows
       .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`)
@@ -396,6 +457,7 @@ if (mount) {
         `• Oświetlenie LED: ${ledLabel()}`,
         `• Rolety screen: ${screensLabel()}`,
         `• Przeszklenia: ${glassLabel()}`,
+        `• Dodatkowe nogi: ${state.extraLegs.length ? state.extraLegs.length + " szt." : "brak"}`,
         "",
         `Link do projektu: ${encodeState()}`,
         "",

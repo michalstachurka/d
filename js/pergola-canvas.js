@@ -82,6 +82,33 @@ export function createPergolaCanvas(mountEl, initialParams) {
   };
   el.addEventListener("pointerdown", armZoom);
   el.addEventListener("pointerleave", disarmZoom);
+
+  // Tryb wskazywania miejsca (dodatkowa noga): pojedyncze kliknięcie bez
+  // przeciągnięcia rzutuje promień na płaszczyznę podłoża i zwraca (x, z).
+  const raycaster = new THREE.Raycaster();
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  let placementCb = null;
+  let downPt = null;
+  el.addEventListener("pointerdown", (e) => { downPt = { x: e.clientX, y: e.clientY }; });
+  el.addEventListener("pointerup", (e) => {
+    if (!placementCb || !downPt) return;
+    const moved = Math.hypot(e.clientX - downPt.x, e.clientY - downPt.y);
+    downPt = null;
+    if (moved > 6) return; // to był obrót, nie klik
+    const rect = renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    raycaster.setFromCamera(ndc, camera);
+    const hit = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, hit)) placementCb(hit.x, hit.z);
+  });
+  const setPlacement = (cb) => {
+    placementCb = cb || null;
+    el.style.cursor = placementCb ? "crosshair" : "grab";
+  };
+
   // Spokojniejszy, bardziej kontrolowany obrót przeciągnięciem
   controls.rotateSpeed = window.matchMedia("(pointer: coarse)").matches ? 0.9 : 0.55;
   // maxPolarAngle is managed per-frame in the render loop
@@ -133,15 +160,16 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const glowMaterial = new THREE.MeshBasicMaterial({ color: "#f2f6ff" });
   glowMaterial.toneMapped = false;
 
-  // Rolety screen — półprzezroczysta tkanina techniczna. Jeden materiał na
-  // wszystkie boki (wspólny kolor). DoubleSide, żeby było widać od środka.
+  // Rolety screen — tkanina techniczna. Renderujemy tylko FrontSide, a
+  // normalne każdego boku skierowane są na ZEWNĄTRZ. Efekt jak w realnym
+  // screenie: z zewnątrz płótno jest kryjące (nie widać środka pergoli),
+  // a od wewnątrz tylna ściana jest odrzucana (backface culling), więc
+  // patrząc ze środka widać na zewnątrz.
   const screenMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#c9b79c"),
-    roughness: 0.95,
+    roughness: 0.92,
     metalness: 0,
-    transparent: true,
-    opacity: 0.82,
-    side: THREE.DoubleSide,
+    side: THREE.FrontSide,
   });
   // Przeszklenia — tafla szkła: mocno przezroczysta, gładka, lekko chłodna.
   const glassMaterial = new THREE.MeshStandardMaterial({
@@ -284,7 +312,11 @@ export function createPergolaCanvas(mountEl, initialParams) {
     const cassetteH = 0.105; // skrzynka rolety — 10,5 cm
     const fabricTop = H - beam - cassetteH; // płótno startuje od spodu skrzynki
     const inset = 0.02;
-    const mkScreen = (side, width, x, z, rotY) => {
+    // Obrót płótna tak, by FrontSide (normalna) patrzyła NA ZEWNĄTRZ pergoli.
+    const OUT_ROT = { front: 0, back: Math.PI, left: -Math.PI / 2, right: Math.PI / 2 };
+    const mkScreen = (side, width, x, z) => {
+      const rotY = OUT_ROT[side];
+      const axisX = side === "front" || side === "back"; // szerokość biegnie po X
       // skrzynka w kolorze konstrukcji, tuż pod belką
       const box = new THREE.Mesh(new THREE.BoxGeometry(width, cassetteH, 0.11), material);
       box.position.set(x, H - beam - cassetteH / 2, z);
@@ -317,7 +349,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
       for (const sgn of [-1, 1]) {
         const g = new THREE.Mesh(guideGeo, material);
         g.rotation.y = rotY;
-        if (rotY === 0) g.position.set(x + sgn * (width / 2), fabricTop / 2, z);
+        if (axisX) g.position.set(x + sgn * (width / 2), fabricTop / 2, z);
         else g.position.set(x, fabricTop / 2, z + sgn * (width / 2));
         g.visible = vis;
         group.add(g);
@@ -325,10 +357,10 @@ export function createPergolaCanvas(mountEl, initialParams) {
       }
       screenGuides[side] = pair;
     };
-    mkScreen("front", totalW - post, 0, D / 2 - inset, 0);
-    mkScreen("back", totalW - post, 0, -D / 2 + inset, 0);
-    mkScreen("left", D - post, -totalW / 2 + inset, 0, Math.PI / 2);
-    mkScreen("right", D - post, totalW / 2 - inset, 0, Math.PI / 2);
+    mkScreen("front", totalW - post, 0, D / 2 - inset);
+    mkScreen("back", totalW - post, 0, -D / 2 + inset);
+    mkScreen("left", D - post, -totalW / 2 + inset, 0);
+    mkScreen("right", D - post, totalW / 2 - inset, 0);
     stateRef.screens = screens;
     stateRef.screenBoxes = screenBoxes;
     stateRef.screenBars = screenBars;
@@ -358,6 +390,19 @@ export function createPergolaCanvas(mountEl, initialParams) {
       if (p.glass.back) mkGlass(totalW - post, 0, -D / 2 + gI, 0);
       if (p.glass.left) mkGlass(D - post, -totalW / 2 + gI, 0, Math.PI / 2);
       if (p.glass.right) mkGlass(D - post, totalW / 2 - gI, 0, Math.PI / 2);
+    }
+
+    // Dodatkowe nogi wskazane przez użytkownika (klik na modelu). Słup od
+    // ziemi do belki, w kolorze konstrukcji, z drobną stopką.
+    if (p.extraLegs) {
+      for (const leg of p.extraLegs) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(post, H, post), material);
+        m.position.set(leg.x, H / 2, leg.z);
+        group.add(m);
+        const footPlate = new THREE.Mesh(new THREE.BoxGeometry(post * 1.6, 0.02, post * 1.6), material);
+        footPlate.position.set(leg.x, 0.01, leg.z);
+        group.add(footPlate);
+      }
     }
 
     ground.scale.setScalar(Math.max(totalW, D) * 1.9);
@@ -526,5 +571,5 @@ export function createPergolaCanvas(mountEl, initialParams) {
     return out.toDataURL("image/png");
   }
 
-  return { update, destroy, snapshot };
+  return { update, destroy, snapshot, setPlacement };
 }

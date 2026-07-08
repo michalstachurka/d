@@ -809,6 +809,11 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 .pergola3d__pills button[aria-pressed="true"] {
   color: var(--ink); background: var(--copper-hi); border-color: var(--copper-hi);
 }
+.pergola3d__hint {
+  margin-top: 10px;
+  font-size: 12px; font-weight: 300; line-height: 1.5;
+  color: var(--copper-hi);
+}
 .pergola3d__slider { display: grid; gap: 10px; }
 .pergola3d__slider b { color: var(--copper-hi); font-weight: 500; }
 .pergola3d__slider input[type="range"] {
@@ -1455,14 +1460,14 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   }
 
   .pergola-doc__render {
-    margin: 14px 0 18px;
+    margin: 12px 0 14px;
     text-align: center;
     border: 1px solid rgba(20, 18, 15, .12);
     background: #efe9df;
   }
   .pergola-doc__render img {
     display: block; margin: 0 auto;
-    max-width: 100%; max-height: 94mm;
+    max-width: 100%; max-height: 80mm;
     width: auto; height: auto;
   }
 
@@ -1481,7 +1486,7 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   .pergola-doc__table { width: 100%; border-collapse: collapse; }
   .pergola-doc__table tr { border-bottom: 1px solid rgba(20, 18, 15, .12); }
   .pergola-doc__table th, .pergola-doc__table td {
-    text-align: left; padding: 7px 0; font-size: 13px; vertical-align: top;
+    text-align: left; padding: 5px 0; font-size: 12.5px; vertical-align: top;
   }
   .pergola-doc__table th {
     width: 42%; font-weight: 400; color: #8c8578;
