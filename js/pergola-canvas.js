@@ -233,10 +233,10 @@ export function createPergolaCanvas(mountEl, initialParams) {
     roughness: 0.05,
     metalness: 0,
     transparent: true,
-    opacity: 0.24,
+    opacity: 0.3,
     side: THREE.DoubleSide,
   });
-  glassMaterial.envMapIntensity = 1.3;
+  glassMaterial.envMapIntensity = 1.5;
   // Postęp animacji opuszczania (0 = zwinięta u góry, 1 = w pełni opuszczona).
   // Trzymany poza rebuild(), żeby zmiany nie przerywały animacji.
   const screenAnim = { front: 0, back: 0, left: 0, right: 0 };
@@ -429,19 +429,10 @@ export function createPergolaCanvas(mountEl, initialParams) {
     const glassPanes = [];
     if (p.glass) {
       const paneH = H - beam;
+      // Bezramowe skrzydło — sama tafla szkła, bez aluminiowej ramki.
       const mkSash = (w) => {
         const g = new THREE.Group();
         g.add(new THREE.Mesh(new THREE.PlaneGeometry(w, paneH), glassMaterial));
-        const fr = 0.045;
-        const bar = (bw, bh, bx, by) => {
-          const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.05), material);
-          b.position.set(bx, by, 0);
-          g.add(b);
-        };
-        bar(w, fr, 0, paneH / 2 - fr / 2);
-        bar(w, fr, 0, -paneH / 2 + fr / 2);
-        bar(fr, paneH, -w / 2 + fr / 2, 0);
-        bar(fr, paneH, w / 2 - fr / 2, 0);
         return g;
       };
       const addGlass = (side) => {
