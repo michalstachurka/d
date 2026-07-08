@@ -170,62 +170,11 @@
     }
   };
 
-  /* ---------- Oferta: natywna karuzela scroll-snap (desktop i mobile) ----------
-     Przewijanie jest w 100% przeglądarkowe (overflow-x + scroll-snap) — nic
-     tu nie przechwytuje ani nie symuluje scrolla strony, więc nie ma ryzyka
-     zawieszenia się page-scrolla, a sceny nigdy się na siebie nie nakładają. */
-  const offerTrack = $('#offerTrack');
-  const offerScenes = $$('.offer-scene');
-  const offerIndex = $('#offerIndex');
-  const progressBars = $$('#offerProgress span');
-  const offerPrev = $('#offerPrev');
-  const offerNext = $('#offerNext');
-  const sceneCount = offerScenes.length;
-
-  const setOfferUI = (idx) => {
-    if (offerIndex) offerIndex.textContent = String(idx + 1).padStart(2, '0');
-    progressBars.forEach((b, i) => b.classList.toggle('is-active', i <= idx));
-    offerScenes.forEach((s, i) => s.classList.toggle('is-current', i === idx));
-    if (offerPrev) offerPrev.disabled = idx === 0;
-    if (offerNext) offerNext.disabled = idx === sceneCount - 1;
-  };
-
-  if (offerTrack && sceneCount) {
-    let offerTicking = false;
-    offerTrack.addEventListener('scroll', () => {
-      if (offerTicking) return;
-      offerTicking = true;
-      requestAnimationFrame(() => {
-        const idx = clamp(Math.round(offerTrack.scrollLeft / offerTrack.clientWidth), 0, sceneCount - 1);
-        setOfferUI(idx);
-        offerTicking = false;
-      });
-    }, { passive: true });
-
-    const goToScene = (idx) => {
-      offerTrack.scrollTo({ left: clamp(idx, 0, sceneCount - 1) * offerTrack.clientWidth, behavior: 'smooth' });
-    };
-    offerPrev?.addEventListener('click', () => {
-      goToScene(Math.round(offerTrack.scrollLeft / offerTrack.clientWidth) - 1);
-    });
-    offerNext?.addEventListener('click', () => {
-      goToScene(Math.round(offerTrack.scrollLeft / offerTrack.clientWidth) + 1);
-    });
-
-    // Desktop: kółko myszy nad kafelkami przewija w poziomie; na granicach
-    // (pierwsza/ostatnia scena) oddaje scroll z powrotem stronie.
-    offerTrack.addEventListener('wheel', (e) => {
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-      const atStart = offerTrack.scrollLeft <= 1;
-      const atEnd = offerTrack.scrollLeft >= offerTrack.scrollWidth - offerTrack.clientWidth - 1;
-      if ((e.deltaY < 0 && atStart) || (e.deltaY > 0 && atEnd)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      offerTrack.scrollLeft += e.deltaY;
-    }, { passive: false });
-
-    setOfferUI(0);
-  }
+  /* ---------- Oferta: pionowa galeria ----------
+     Karty odsłaniają się przez IntersectionObserver ([data-reveal] →
+     .is-visible) i CSS (kurtyna clip-path + wjazd tytułu). Zwykły pionowy
+     scroll strony — nic tu nie przechwytuje scrolla, więc desktop i mobile
+     zachowują się tak samo. */
 
   /* ---------- Tilt 3D: karty realizacji (desktop) ---------- */
   if (finePointer && !prefersReduced) {

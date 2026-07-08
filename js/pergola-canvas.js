@@ -257,12 +257,16 @@ export function createPergolaCanvas(mountEl, initialParams) {
     // Height excluded: reframing on height made the whole model appear
     // to change size. Distance changes are eased in the render loop and
     // never touch the viewing direction, so nothing jumps.
-    controls.target.set(0, H * 0.58, 0);
+    // Aim slightly below the model's mid-height so the pergola sits with
+    // equal breathing room above the roof and below the posts in the frame.
+    controls.target.set(0, H * 0.5, 0);
     const dims = `${p.widths.join(",")}|${D}`;
     if (stateRef.lastDims !== dims) {
       const first = stateRef.lastDims === undefined;
       stateRef.lastDims = dims;
-      const radius = Math.max(totalW * 1.15, D * 1.7, 7.2);
+      // Larger minimum distance = the whole model sits smaller in the taller
+      // stage, so there's clear empty space around it (not cropped tight).
+      const radius = Math.max(totalW * 1.2, D * 1.85, 8.7);
       if (first) {
         const dir = camera.position.clone().sub(controls.target).normalize();
         camera.position.copy(controls.target).addScaledVector(dir, radius);
