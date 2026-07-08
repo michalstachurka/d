@@ -70,7 +70,6 @@
   --ink: #14120f;          /* głęboki ciepły grafit, przyciemniony */
   --ink-2: #1b1814;        /* grafit podniesiony */
   --paper: #f1ebe0;        /* kość słoniowa */
-  --sand: #d9a874;         /* piaskowa terakota — cieplejsza, bardziej pigmentowa */
   --gray: #8c8578;         /* ciepły szary */
   --copper: #b97f52;       /* miedź — akcent główny */
   --copper-hi: #d29b63;    /* miedź w świetle */
@@ -185,13 +184,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .section-lead--light { color: rgba(241, 235, 224, .72); }
 
 .section--ivory { background: var(--paper); color: var(--ink); }
-.section--sand { background: var(--sand); color: var(--ink); }
-/* Miedź na piaskowej terakocie ma zbyt mały kontrast — na tym tle
-   akcenty i tekst przechodzą na ciemny grafit zamiast miedzi. */
-.section--sand .eyebrow { color: var(--ink); }
-.section--sand .eyebrow::before { background: var(--ink); }
-.section--sand .section-title em { color: var(--ink); text-decoration: underline; text-decoration-color: var(--copper); text-decoration-thickness: .06em; text-underline-offset: .08em; }
-.section--sand .process__step em { color: var(--ink); opacity: .55; }
 
 /* ---------- Przyciski ---------- */
 .btn {
@@ -282,6 +274,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 @keyframes pre-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes pre-light { to { left: 100%; } }
 
+.preloader.is-done { pointer-events: none; }
 .preloader.is-done .preloader__inner { opacity: 0; transform: translateY(-14px); }
 .preloader.is-done .preloader__slats span { transform: translateY(-101%); }
 .preloader.is-gone { display: none; }
@@ -622,49 +615,58 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 }
 
 /* ============================================================
-   OFERTA — poziomy sticky scroll
+   OFERTA — poziomy scroll-snap (natywny, bez przechwytywania scrolla)
    ============================================================ */
-.offer { position: relative; background: var(--ink); }
-.offer__sticky {
-  position: sticky; top: 0;
-  height: 100svh;
-  overflow: clip;
-  display: flex; flex-direction: column; justify-content: center;
-}
+.offer { position: relative; background: var(--ink); padding: clamp(90px, 12vw, 150px) 0 64px; }
 .offer__head {
-  position: absolute; top: 0; left: 0; right: 0;
   display: flex; justify-content: space-between; align-items: center;
-  padding-top: 96px;
-  z-index: 5;
+  margin-bottom: clamp(28px, 4vw, 48px);
 }
 .eyebrow--light { color: var(--copper-hi); }
 .offer__count { font-size: 13px; letter-spacing: .2em; color: rgba(241,235,224,.6); }
 .offer__count span { color: var(--copper-hi); }
+
+.offer__viewport { position: relative; }
 .offer__track {
-  position: relative;
-  height: min(72svh, 720px);
-}
-.offer-scene {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+.offer__track::-webkit-scrollbar { display: none; }
+.offer-scene {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  min-height: min(70svh, 680px);
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   align-items: center;
   gap: clamp(16px, 2vw, 36px);
   padding: 0 var(--gutter);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .7s var(--ease-out), transform .7s var(--ease-out);
+  opacity: .35;
+  transition: opacity .5s var(--ease-out);
 }
-.offer-scene:nth-child(odd) { transform: translateX(-7%); }
-.offer-scene:nth-child(even) { transform: translateX(7%); }
-.offer-scene.is-active {
-  opacity: 1;
-  pointer-events: auto;
-  transform: none;
+.offer-scene.is-current { opacity: 1; }
+.offer__nav {
+  position: absolute; top: 50%; z-index: 4;
+  transform: translateY(-50%);
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(241, 235, 224, .25);
+  background: rgba(22, 21, 19, .55);
+  backdrop-filter: blur(6px);
+  color: var(--paper);
+  font-size: 1.4rem;
+  line-height: 1;
+  transition: border-color .3s, background-color .3s, transform .3s var(--ease-out);
 }
+.offer__nav:hover { border-color: var(--copper-hi); background: rgba(22, 21, 19, .8); }
+.offer__nav--prev { left: 8px; }
+.offer__nav--next { right: 8px; }
+.offer__nav[disabled] { opacity: 0; pointer-events: none; }
 .offer-scene__index {
   position: absolute;
   top: 50%; left: 4vw;
@@ -732,9 +734,8 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 .offer-scene:nth-child(even) .offer-scene__index { left: auto; right: 4vw; }
 
 .offer__progress {
-  position: absolute; bottom: 34px; left: 50%;
-  transform: translateX(-50%);
-  display: flex; gap: 10px;
+  display: flex; justify-content: center; gap: 10px;
+  margin-top: clamp(28px, 4vw, 44px);
 }
 .offer__progress span {
   width: 4px; height: 26px;
@@ -1025,15 +1026,34 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   counter-reset: step;
 }
 .process__step {
-  border-top: 1px solid rgba(22, 21, 19, .28);
+  border-top: 1px solid rgba(22, 21, 19, .18);
   padding-top: 20px;
   position: relative;
 }
+/* Linia postępu: pusty ślad wypełnia się od lewej w kolorze ember, gdy
+   krok wjeżdża w widok — ten sam "prowadzący" mechanizm co na mobile,
+   tylko rozłożony na poziomej krawędzi każdej karty. */
 .process__step::before {
   content: '';
   position: absolute; top: -1px; left: 0;
-  width: 42px; height: 1px;
-  background: var(--copper);
+  width: 0; height: 1px;
+  background: var(--ember);
+  transition: width .8s var(--ease-out);
+}
+.process__step.is-visible::before { width: 100%; }
+.process__step::after {
+  content: '';
+  position: absolute; top: -6px; left: -1px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid rgba(22, 21, 19, .3);
+  transition: background-color .4s var(--ease-out) .3s, border-color .4s var(--ease-out) .3s, transform .4s var(--ease-out) .3s;
+}
+.process__step.is-visible::after {
+  background: var(--ember);
+  border-color: var(--ember);
+  transform: scale(1.15);
 }
 .process__step em {
   font-family: var(--font-mono);
@@ -1254,15 +1274,13 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   .manifest__media { margin-top: 44px; }
   .manifest__copy, .manifest__stat { margin-top: 40px; }
 
-  /* Oferta: ten sam przypięty mechanizm co na desktopie (sceny wskakują
-     na przemian z lewej/prawej), tylko treść scen układa się w jednej
-     kolumnie i jest nieco bardziej zwarta, żeby zmieścić się w kadrze. */
-  .offer__head { padding-top: 84px; }
+  /* Oferta: ta sama karuzela scroll-snap co na desktopie, tylko treść
+     każdej sceny układa się w jednej kolumnie i jest bardziej zwarta. */
   .offer-scene {
     display: block;
+    min-height: 0;
     padding: 0 var(--gutter);
   }
-  .offer-scene__body { padding-top: 8px; }
   .offer-scene__index {
     position: static;
     display: block;
@@ -1274,7 +1292,8 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   .offer-scene__copy { margin-top: 14px; }
   .offer-scene__specs { margin-top: 18px; }
   .offer-scene__media { margin-top: 20px; }
-  .offer-scene__media img { height: 30svh; }
+  .offer-scene__media img { height: 34svh; }
+  .offer__nav { display: none; }
 
   .works__grid { display: block; }
   .work { margin-top: 40px; }
@@ -1311,7 +1330,7 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
     position: absolute; left: -30px; top: 4px;
     width: 14px; height: 14px;
     border-radius: 50%;
-    background: var(--sand);
+    background: var(--paper);
     border: 2px solid rgba(22, 21, 19, .3);
     transition: background-color .4s var(--ease-out), border-color .4s var(--ease-out), transform .4s var(--ease-out);
   }

@@ -163,11 +163,12 @@
 
 <!-- ============ OFERTA — HORIZONTAL ============ -->
 <section class="offer" id="oferta">
-  <div class="offer__sticky">
-    <header class="offer__head container">
-      <p class="eyebrow eyebrow--light">Oferta</p>
-      <p class="offer__count mono-note"><span id="offerIndex">01</span> / 08</p>
-    </header>
+  <header class="offer__head container">
+    <p class="eyebrow eyebrow--light">Oferta</p>
+    <p class="offer__count mono-note"><span id="offerIndex">01</span> / 08</p>
+  </header>
+  <div class="offer__viewport">
+    <button type="button" class="offer__nav offer__nav--prev" id="offerPrev" aria-label="Poprzednia kategoria oferty">‹</button>
     <div class="offer__track" id="offerTrack">
 
       <article class="offer-scene">
@@ -331,9 +332,10 @@
       </article>
 
     </div>
-    <div class="offer__progress" aria-hidden="true" id="offerProgress">
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-    </div>
+    <button type="button" class="offer__nav offer__nav--next" id="offerNext" aria-label="Następna kategoria oferty">›</button>
+  </div>
+  <div class="offer__progress" aria-hidden="true" id="offerProgress">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
 </section>
 
@@ -489,7 +491,7 @@
 </section>
 
 <!-- ============ PROCES ============ -->
-<section class="process section--sand" id="proces">
+<section class="process section--ivory" id="proces">
   <div class="container">
     <p class="eyebrow" data-reveal>Proces współpracy</p>
     <h2 class="section-title" data-reveal>Od rozmowy<br><em>do pierwszego wieczoru.</em></h2>

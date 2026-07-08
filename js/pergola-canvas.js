@@ -54,9 +54,12 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  // Delikatne światło wypełniające — bez niego spód lameli (odwrócony od
+  // env. mapy) wychodzi niemal czarny niezależnie od koloru materiału.
+  scene.add(new THREE.HemisphereLight("#f4f1ea", "#2a241c", 0.65));
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(6.4, 3.4, 7.6);
+  camera.position.set(6.4, 0.95, 7.6);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -254,7 +257,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
     // Height excluded: reframing on height made the whole model appear
     // to change size. Distance changes are eased in the render loop and
     // never touch the viewing direction, so nothing jumps.
-    controls.target.set(0, H * 0.55, 0);
+    controls.target.set(0, H * 0.58, 0);
     const dims = `${p.widths.join(",")}|${D}`;
     if (stateRef.lastDims !== dims) {
       const first = stateRef.lastDims === undefined;
@@ -264,7 +267,17 @@ export function createPergolaCanvas(mountEl, initialParams) {
         const dir = camera.position.clone().sub(controls.target).normalize();
         camera.position.copy(controls.target).addScaledVector(dir, radius);
       } else {
-        stateRef.desiredRadius = radius;
+        const dir = camera.position.clone().sub(controls.target);
+        if (radius > dir.length()) {
+          // Growing: snap the camera out immediately so the widened/deepened
+          // structure never pokes past the canvas edge, even for the single
+          // frame right after the change.
+          camera.position.copy(controls.target).addScaledVector(dir.normalize(), radius);
+          stateRef.desiredRadius = undefined;
+        } else {
+          // Shrinking: ease in smoothly, there's no overflow risk either way.
+          stateRef.desiredRadius = radius;
+        }
       }
     }
   };
