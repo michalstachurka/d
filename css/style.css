@@ -416,6 +416,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   position: relative;
   min-height: 100svh;
   display: flex; flex-direction: column; justify-content: flex-end;
+  /* Rezerwa na stały nagłówek — treść hero nigdy nie wjeżdża pod menu,
+     nawet na niskich ekranach laptopów. */
+  padding-top: clamp(96px, 13vh, 150px);
   overflow: clip;
 }
 .hero__media {
@@ -451,10 +454,10 @@ body.is-loaded .hero__media img { transform: scale(1); }
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(2.7rem, 8vw, 6.8rem);
-  line-height: 1.02;
+  font-size: clamp(2.4rem, 5.4vw, 5rem);
+  line-height: 1.04;
   letter-spacing: .002em;
-  max-width: 14ch;
+  max-width: 15ch;
 }
 .hero__title .line { display: block; overflow: hidden; }
 .hero__title .line > span {
@@ -467,12 +470,12 @@ body.is-loaded .hero__title .line:nth-child(2) > span { transform: none; transit
 body.is-loaded .hero__title .line:nth-child(3) > span { transform: none; transition-delay: .34s; }
 .hero__lead {
   max-width: 44ch;
-  margin-top: 28px;
-  font-size: clamp(1rem, .4vw + .9rem, 1.2rem);
+  margin-top: 24px;
+  font-size: clamp(1rem, .4vw + .9rem, 1.15rem);
   font-weight: 300;
   color: rgba(241, 235, 224, .85);
 }
-.hero__actions { margin-top: 38px; }
+.hero__actions { margin-top: 30px; }
 .hero__actions > span { display: inline-flex; flex-wrap: wrap; gap: 14px; }
 .reveal-line { overflow: hidden; }
 .reveal-line > span {
@@ -1002,53 +1005,84 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
    PROCES
    ============================================================ */
 .process { padding: clamp(90px, 13vw, 180px) 0; }
-.process__list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(36px, 4vw, 64px) clamp(24px, 3vw, 56px);
-  margin-top: clamp(48px, 6vw, 90px);
-  counter-reset: step;
-}
-.process__step {
-  border-top: 1px solid rgba(22, 21, 19, .18);
-  padding-top: 20px;
+
+/* Oś czasu z „mechanizmem liniowym": pionowa linia pośrodku wypełnia się
+   kolorem ember w miarę przewijania, a pierścień-znacznik zjeżdża w dół.
+   Etapy siadają naprzemiennie po lewej i prawej stronie osi. Wysokość
+   wypełnienia i pozycję znacznika ustawia JS (updateProcess w main.js). */
+.process__timeline {
   position: relative;
+  max-width: 860px;
+  margin: clamp(52px, 6vw, 96px) auto 0;
 }
-/* Linia postępu: pusty ślad wypełnia się od lewej w kolorze ember, gdy
-   krok wjeżdża w widok — ten sam "prowadzący" mechanizm co na mobile,
-   tylko rozłożony na poziomej krawędzi każdej karty. */
-.process__step::before {
-  content: '';
-  position: absolute; top: -1px; left: 0;
-  width: 0; height: 1px;
+.process__line {
+  position: absolute;
+  left: 50%; top: 6px; bottom: 6px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: rgba(22, 21, 19, .16);
+}
+.process__fill {
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 0;
   background: var(--ember);
-  transition: width .8s var(--ease-out);
 }
-.process__step.is-visible::before { width: 100%; }
+.process__marker {
+  position: absolute; left: 50%; top: 0;
+  width: 13px; height: 13px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--paper);
+  border: 2px solid var(--ember);
+  box-shadow: 0 0 0 5px rgba(193, 80, 42, .14);
+}
+.process__list { position: relative; }
+.process__step {
+  position: relative;
+  width: 50%;
+  box-sizing: border-box;
+  padding-bottom: clamp(46px, 6vw, 84px);
+}
+.process__step:last-child { padding-bottom: 0; }
+/* węzeł na osi */
 .process__step::after {
   content: '';
-  position: absolute; top: -6px; left: -1px;
-  width: 12px; height: 12px;
-  border-radius: 50%;
+  position: absolute; top: 3px;
+  width: 13px; height: 13px; border-radius: 50%;
   background: var(--paper);
-  border: 2px solid rgba(22, 21, 19, .3);
-  transition: background-color .4s var(--ease-out) .3s, border-color .4s var(--ease-out) .3s, transform .4s var(--ease-out) .3s;
+  border: 2px solid rgba(22, 21, 19, .28);
+  transition: background-color .45s var(--ease-out), border-color .45s var(--ease-out), transform .45s var(--ease-out);
+  z-index: 2;
 }
-.process__step.is-visible::after {
+.process__step.is-active::after {
   background: var(--ember);
   border-color: var(--ember);
-  transform: scale(1.15);
+  transform: scale(1.18);
 }
+/* lewa kolumna (nieparzyste) — tekst dosunięty do osi */
+.process__step:nth-child(odd) {
+  text-align: right;
+  padding-right: clamp(30px, 4vw, 62px);
+}
+.process__step:nth-child(odd)::after { right: -6px; }
+/* prawa kolumna (parzyste) — przesunięte za oś */
+.process__step:nth-child(even) {
+  margin-left: 50%;
+  text-align: left;
+  padding-left: clamp(30px, 4vw, 62px);
+}
+.process__step:nth-child(even)::after { left: -6px; }
+
 .process__step em {
+  display: block;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 12px; letter-spacing: .1em;
   color: var(--copper);
 }
 .process__step h3 {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(1.25rem, 1.7vw, 1.6rem);
+  font-size: clamp(1.3rem, 1.9vw, 1.75rem);
   margin-top: 10px;
   color: var(--ink);
 }
@@ -1059,6 +1093,7 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   color: #57503f;
   max-width: 34ch;
 }
+.process__step:nth-child(odd) p { margin-left: auto; }
 
 /* ============================================================
    TECHNOLOGIA
@@ -1274,41 +1309,25 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   .clients__cols { grid-template-columns: 1fr; }
   .clients__list small { max-height: 60px; opacity: 1; margin-top: 6px; }
 
-  /* Proces: jedna kolumna — czytelniejsza sekwencja "podróży" niż siatka
-     2x3, i pozwala na prowadzącą linię łączącą kolejne etapy. */
-  .process__list {
-    grid-template-columns: 1fr;
-    gap: 0;
-    position: relative;
-    padding-left: 30px;
-    margin-top: clamp(48px, 8vw, 72px);
-  }
-  .process__list::before {
-    content: '';
-    position: absolute; left: 6px; top: 8px; bottom: 8px;
-    width: 2px;
-    background: rgba(22, 21, 19, .18);
-  }
-  .process__step {
-    border-top: none;
+  /* Proces (mobile): oś przesuwa się na lewą krawędź, wszystkie etapy
+     układają się w jednej kolumnie po prawej — ten sam mechanizm
+     wypełniającej się linii i znacznika co na desktopie. */
+  .process__timeline { max-width: none; padding-left: 30px; }
+  .process__line { left: 7px; transform: none; }
+  .process__marker { left: 7px; }
+  .process__step,
+  .process__step:nth-child(odd),
+  .process__step:nth-child(even) {
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
     padding: 0 0 40px;
   }
   .process__step:last-child { padding-bottom: 0; }
-  .process__step::before { display: none; }
-  .process__step::after {
-    content: '';
-    position: absolute; left: -30px; top: 4px;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--paper);
-    border: 2px solid rgba(22, 21, 19, .3);
-    transition: background-color .4s var(--ease-out), border-color .4s var(--ease-out), transform .4s var(--ease-out);
-  }
-  .process__step.is-visible::after {
-    background: var(--ember);
-    border-color: var(--ember);
-    transform: scale(1.15);
-  }
+  .process__step:nth-child(odd) p,
+  .process__step:nth-child(even) p { margin-left: 0; max-width: none; }
+  .process__step:nth-child(odd)::after,
+  .process__step:nth-child(even)::after { left: -29px; right: auto; }
 
   .tech__grid { grid-template-columns: 1fr; }
   .contact__grid { grid-template-columns: 1fr; }

@@ -170,6 +170,31 @@
     }
   };
 
+  /* ---------- Proces: mechanizm liniowy (oś czasu sterowana scrollem) ----------
+     Pionowa linia wypełnia się kolorem ember, a pierścień-znacznik zjeżdża
+     w dół w miarę przewijania sekcji. Węzły etapów zapalają się, gdy minie
+     je znacznik. Ten sam kod działa na desktopie (oś pośrodku) i mobile
+     (oś przy lewej krawędzi) — różni je tylko CSS. */
+  const processTimeline = $('#processTimeline');
+  const processFill = $('#processFill');
+  const processMarker = $('#processMarker');
+  const processSteps = $$('.process__step');
+  const onProcess = () => {
+    if (!processTimeline || !processFill) return;
+    const rect = processTimeline.getBoundingClientRect();
+    // „Linia czytania" na 55% wysokości okna — postęp = jak daleko przeszła
+    // przez oś czasu, przycięty do zakresu 0–1.
+    const anchor = window.innerHeight * 0.55;
+    const p = clamp((anchor - rect.top) / rect.height, 0, 1);
+    processFill.style.height = `${(p * 100).toFixed(2)}%`;
+    processMarker.style.top = `${(p * 100).toFixed(2)}%`;
+    const fillY = rect.top + rect.height * p;
+    processSteps.forEach((s) => {
+      const sr = s.getBoundingClientRect();
+      s.classList.toggle('is-active', sr.top + 6 <= fillY + 0.5);
+    });
+  };
+
   /* ---------- Oferta: pionowa galeria ----------
      Karty odsłaniają się przez IntersectionObserver ([data-reveal] →
      .is-visible) i CSS (kurtyna clip-path + wjazd tytułu). Zwykły pionowy
@@ -223,9 +248,12 @@
     requestAnimationFrame(() => {
       onHeaderScroll();
       onParallax();
+      onProcess();
       ticking = false;
     });
   };
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onProcess, { passive: true });
+  window.addEventListener('load', onProcess);
   onScroll();
 })();
