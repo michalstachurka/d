@@ -133,6 +133,21 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const glowMaterial = new THREE.MeshBasicMaterial({ color: "#f2f6ff" });
   glowMaterial.toneMapped = false;
 
+  // Rolety screen — półprzezroczysta tkanina techniczna. Jeden materiał na
+  // wszystkie boki (wspólny kolor). DoubleSide, żeby było widać od środka.
+  const screenMaterial = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#c9b79c"),
+    roughness: 0.95,
+    metalness: 0,
+    transparent: true,
+    opacity: 0.82,
+    side: THREE.DoubleSide,
+  });
+  // Postęp animacji opuszczania (0 = zwinięta u góry, 1 = w pełni opuszczona).
+  // Trzymany poza rebuild(), żeby zmiany nie przerywały animacji.
+  const screenAnim = { front: 0, back: 0, left: 0, right: 0 };
+  const SCREEN_SIDES = ["front", "back", "left", "right"];
+
   let group = new THREE.Group();
   scene.add(group);
 
@@ -249,6 +264,30 @@ export function createPergolaCanvas(mountEl, initialParams) {
       }
     }
 
+    // Rolety screen na obwodzie — jedno płótno na bok, zawieszone pod belką.
+    // Geometria przesunięta tak, że górna krawędź jest w punkcie zaczepienia,
+    // więc skalowanie w osi Y „opuszcza" roletę z góry na dół (animacja).
+    const screens = {};
+    const screenTop = H - beam;
+    const inset = 0.02;
+    const mkScreen = (side, width, x, z, rotY) => {
+      const geo = new THREE.PlaneGeometry(width, screenTop, 1, 1);
+      geo.translate(0, -screenTop / 2, 0); // górna krawędź w local y = 0
+      const m = new THREE.Mesh(geo, screenMaterial);
+      m.position.set(x, screenTop, z);
+      m.rotation.y = rotY;
+      const prog = Math.max(screenAnim[side], 0.0001);
+      m.scale.y = prog;
+      m.visible = prog > 0.003;
+      group.add(m);
+      screens[side] = m;
+    };
+    mkScreen("front", totalW - post, 0, D / 2 - inset, 0);
+    mkScreen("back", totalW - post, 0, -D / 2 + inset, 0);
+    mkScreen("left", D - post, -totalW / 2 + inset, 0, Math.PI / 2);
+    mkScreen("right", D - post, totalW / 2 - inset, 0, Math.PI / 2);
+    stateRef.screens = screens;
+
     ground.scale.setScalar(Math.max(totalW, D) * 1.9);
     shadow.scale.set(totalW * 1.6, D * 1.7, 1);
     scene.add(group);
@@ -296,6 +335,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
   rebuild(initialParams);
   material.color.set(initialParams.frameColor);
   slatMaterial.color.set(initialParams.slatColor);
+  if (initialParams.screenColor) screenMaterial.color.set(initialParams.screenColor);
   controls.autoRotate = initialParams.spin;
 
   const resize = () => {
@@ -324,6 +364,20 @@ export function createPergolaCanvas(mountEl, initialParams) {
         const rot = THREE.MathUtils.degToRad(osc);
         for (const sl of stateRef.slats) sl.rotation.x = rot;
       }
+      // Rolety screen — miękkie opuszczanie/zwijanie każdego boku osobno.
+      if (stateRef.screens) {
+        const want = p.screens || {};
+        for (const side of SCREEN_SIDES) {
+          const target = want[side] ? 1 : 0;
+          screenAnim[side] += (target - screenAnim[side]) * 0.12;
+          if (Math.abs(target - screenAnim[side]) < 0.002) screenAnim[side] = target;
+          const m = stateRef.screens[side];
+          if (m) {
+            m.scale.y = Math.max(screenAnim[side], 0.0001);
+            m.visible = screenAnim[side] > 0.003;
+          }
+        }
+      }
       // Keep the camera above ground by limiting tilt for the current
       // distance — smooth, no positional snapping
       const r = camera.position.distanceTo(controls.target);
@@ -350,6 +404,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
     stateRef.rebuild?.(params);
     stateRef.material?.color.set(params.frameColor);
     stateRef.slatMaterial?.color.set(params.slatColor);
+    if (params.screenColor) screenMaterial.color.set(params.screenColor);
     if (stateRef.controls) stateRef.controls.autoRotate = params.spin;
     if (!params.spin && stateRef.slats) {
       const rot = THREE.MathUtils.degToRad(params.slatAngle);

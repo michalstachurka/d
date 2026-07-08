@@ -850,6 +850,20 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 .pergola3d__export:hover { background: var(--ember-hi); border-color: var(--ember-hi); color: var(--paper); transform: translateY(-2px); }
 .pergola3d__export svg { flex: none; }
 .pergola3d__export.is-busy { opacity: .6; pointer-events: none; }
+.pergola3d__inquiry {
+  margin-top: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  font-family: var(--font-mono);
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--paper);
+  background: transparent;
+  border: 1px solid var(--line-on-dark);
+  transition: border-color .3s var(--ease-out), color .3s var(--ease-out), transform .3s var(--ease-out);
+}
+.pergola3d__inquiry:hover { border-color: var(--copper-hi); color: var(--copper-hi); transform: translateY(-2px); }
+.pergola3d__inquiry svg { flex: none; }
 .pergola3d__scrim { display: none; }
 
 @media (max-width: 900px) {

@@ -12,6 +12,16 @@ if (mount) {
     { id: "braz", label: "Brąz", value: "#4a3527" },
   ];
 
+  // Kolory tkaniny screen (osobna paleta — barwy techniczne).
+  const SCREEN_COLORS = [
+    { id: "piaskowy", label: "Piaskowy", value: "#c9b79c" },
+    { id: "grafit", label: "Grafit", value: "#55534e" },
+    { id: "antracyt", label: "Antracyt", value: "#33352f" },
+    { id: "ecru", label: "Ecru", value: "#ded7c7" },
+  ];
+
+  const SIDE_LABELS = { front: "Przód", back: "Tył", left: "Lewa", right: "Prawa" };
+
   const state = {
     widths: [4],
     depth: 3.2,
@@ -21,6 +31,8 @@ if (mount) {
     slat: COLORS[0],
     ledLinear: false,
     ledSpots: false,
+    screens: { front: false, back: false, left: false, right: false },
+    screenFabric: SCREEN_COLORS[0],
     spin: true,
   };
 
@@ -33,6 +45,8 @@ if (mount) {
     slatColor: state.slat.value,
     ledLinear: state.ledLinear,
     ledSpots: state.ledSpots,
+    screens: { ...state.screens },
+    screenColor: state.screenFabric.value,
     spin: state.spin,
   });
 
@@ -134,6 +148,31 @@ if (mount) {
   bindToggle("pergolaLedLinear", "ledLinear");
   bindToggle("pergolaLedSpots", "ledSpots");
 
+  /* ---------- Rolety screen: boki + kolor tkaniny ---------- */
+  const screensGroup = document.getElementById("pergolaScreens");
+  screensGroup.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const side = btn.dataset.side;
+      state.screens[side] = !state.screens[side];
+      btn.setAttribute("aria-pressed", String(state.screens[side]));
+      push();
+    });
+  });
+
+  const screenColorHost = document.getElementById("pergolaScreenColor");
+  screenColorHost.innerHTML = SCREEN_COLORS.map((c) => `
+    <button type="button" data-id="${c.id}" aria-pressed="${state.screenFabric.id === c.id}">
+      <i style="--sw:${c.value}"></i><span>${c.label}</span>
+    </button>
+  `).join("");
+  screenColorHost.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.screenFabric = SCREEN_COLORS.find((c) => c.id === btn.dataset.id);
+      screenColorHost.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      push();
+    });
+  });
+
   /* ---------- Animacja ruchu (domyślnie włączona) ---------- */
   const spinBtn = document.getElementById("pergolaSpin");
   spinBtn.addEventListener("click", () => {
@@ -194,6 +233,13 @@ if (mount) {
     return "Bez oświetlenia";
   };
 
+  const screensLabel = () => {
+    const on = ["front", "back", "left", "right"].filter((s) => state.screens[s]);
+    if (!on.length) return "Bez rolet";
+    const sides = on.map((s) => SIDE_LABELS[s]).join(", ");
+    return `${sides} · tkanina ${state.screenFabric.label}`;
+  };
+
   const specLine = () =>
     `${state.widths.map((w) => w.toFixed(1)).join(" + ")} × ` +
     `${state.depth.toFixed(1)} × ${state.height.toFixed(1)} m · ${state.angle}°`;
@@ -216,6 +262,7 @@ if (mount) {
       ["Kolor konstrukcji", state.frame.label],
       ["Kolor lameli", state.slat.label],
       ["Oświetlenie LED", ledLabel()],
+      ["Rolety screen", screensLabel()],
     ];
     doc.table.innerHTML = rows
       .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`)
@@ -256,6 +303,46 @@ if (mount) {
         exportBtn.classList.remove("is-busy");
         printing = false;
       }
+    });
+  }
+
+  /* ---------- Wyślij zapytanie z tą konfiguracją ---------- */
+  const inquiryBtn = document.getElementById("pergolaInquiry");
+  const contactForm = document.getElementById("contactForm");
+  if (inquiryBtn && contactForm) {
+    const configSummary = () => {
+      const totalW = state.widths.reduce((a, b) => a + b, 0).toFixed(1);
+      const lines = [
+        "Zapytanie z konfiguratora 3D — moja pergola:",
+        "",
+        `• Moduły: ${state.widths.length === 1 ? "1 moduł" : state.widths.length + " moduły"}`,
+        `• Szerokość: ${state.widths.map((w) => w.toFixed(1)).join(" + ")} m` +
+          (state.widths.length > 1 ? ` (razem ${totalW} m)` : ""),
+        `• Wysięg: ${state.depth.toFixed(1)} m`,
+        `• Wysokość: ${state.height.toFixed(2)} m`,
+        `• Otwarcie lameli: ${state.angle}°`,
+        `• Kolor konstrukcji: ${state.frame.label}`,
+        `• Kolor lameli: ${state.slat.label}`,
+        `• Oświetlenie LED: ${ledLabel()}`,
+        `• Rolety screen: ${screensLabel()}`,
+        "",
+        "Proszę o kontakt i orientacyjną wycenę.",
+      ];
+      return lines.join("\n");
+    };
+
+    inquiryBtn.addEventListener("click", () => {
+      const msg = contactForm.querySelector('[name="message"]');
+      if (msg) msg.value = configSummary();
+      closePanel();
+      const kontakt = document.getElementById("kontakt");
+      if (kontakt) {
+        const top = kontakt.getBoundingClientRect().top + window.scrollY - 70;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+      // Po dojechaniu do formularza ustaw kursor w pierwszym polu.
+      const nameField = contactForm.querySelector('[name="name"]');
+      if (nameField) setTimeout(() => nameField.focus({ preventScroll: true }), 700);
     });
   }
 }
