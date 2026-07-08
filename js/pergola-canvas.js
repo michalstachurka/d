@@ -44,7 +44,9 @@ export function createPergolaCanvas(mountEl, initialParams) {
   };
   let paramsRef = initialParams;
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // preserveDrawingBuffer pozwala odczytać kadr przez toDataURL() (eksport
+  // PDF) — nie zmienia renderu ani zachowania modelu.
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.style.width = "100%";
@@ -367,5 +369,26 @@ export function createPergolaCanvas(mountEl, initialParams) {
     el.removeChild(renderer.domElement);
   }
 
-  return { update, destroy };
+  /**
+   * Zwraca aktualny kadr modelu jako PNG data-URL, złożony na tle w kolorze
+   * sceny (do eksportu PDF). Renderuje świeżą klatkę tuż przed odczytem, więc
+   * obraz jest zawsze aktualny niezależnie od pauzy w pętli.
+   */
+  function snapshot() {
+    renderer.render(scene, camera);
+    const src = renderer.domElement;
+    const out = document.createElement("canvas");
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext("2d");
+    const g = ctx.createLinearGradient(0, 0, 0, out.height);
+    g.addColorStop(0, "#f6f3ee");
+    g.addColorStop(1, "#e9e3d9");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(src, 0, 0);
+    return out.toDataURL("image/png");
+  }
+
+  return { update, destroy, snapshot };
 }

@@ -835,6 +835,21 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   letter-spacing: .06em; text-transform: uppercase;
   color: rgba(241, 235, 224, .6);
 }
+.pergola3d__export {
+  margin-top: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%;
+  padding: 15px 20px;
+  font-family: var(--font-mono);
+  font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink);
+  background: var(--copper-hi);
+  border: 1px solid var(--copper-hi);
+  transition: background-color .3s var(--ease-out), color .3s var(--ease-out), transform .3s var(--ease-out);
+}
+.pergola3d__export:hover { background: var(--ember-hi); border-color: var(--ember-hi); color: var(--paper); transform: translateY(-2px); }
+.pergola3d__export svg { flex: none; }
+.pergola3d__export.is-busy { opacity: .6; pointer-events: none; }
 .pergola3d__scrim { display: none; }
 
 @media (max-width: 900px) {
@@ -1362,4 +1377,100 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
     opacity: 1 !important; transform: none !important;
   }
   .preloader { display: none; }
+}
+
+/* ============================================================
+   DOKUMENT PDF (karta projektu z konfiguratora)
+   Na ekranie ukryty; renderowany tylko przy druku / „Zapisz jako PDF".
+   ============================================================ */
+.pergola-doc { display: none; }
+
+@media print {
+  @page { size: A4 portrait; margin: 14mm; }
+  html, body { background: #fff; }
+  /* Przy eksporcie pokazujemy wyłącznie kartę projektu. */
+  body.is-printing > * { display: none !important; }
+  body.is-printing > .pergola-doc {
+    display: flex !important;
+    flex-direction: column;
+    min-height: auto;
+    color: #14120f;
+    font-family: var(--font-body);
+  }
+
+  .pergola-doc__head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(20, 18, 15, .2);
+  }
+  .pergola-doc__brand { display: flex; align-items: center; gap: 12px; }
+  .pergola-doc__mark { width: 26px; height: 26px; color: var(--copper); }
+  .pergola-doc__brand strong {
+    display: block;
+    font-family: var(--font-impact);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    font-size: 19px; color: #14120f;
+  }
+  .pergola-doc__brand span {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .3em; text-transform: uppercase; color: #8c8578;
+  }
+  .pergola-doc__meta { text-align: right; }
+  .pergola-doc__meta span {
+    display: block;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase; color: #8c8578;
+  }
+
+  .pergola-doc__render {
+    margin: 14px 0 18px;
+    text-align: center;
+    border: 1px solid rgba(20, 18, 15, .12);
+    background: #efe9df;
+  }
+  .pergola-doc__render img {
+    display: block; margin: 0 auto;
+    max-width: 100%; max-height: 94mm;
+    width: auto; height: auto;
+  }
+
+  .pergola-doc__eyebrow {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .28em; text-transform: uppercase; color: var(--copper);
+  }
+  .pergola-doc__title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 30px; line-height: 1.05; margin: 6px 0 4px; color: #14120f;
+  }
+  .pergola-doc__spec {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em;
+    color: #57503f; margin-bottom: 16px;
+  }
+  .pergola-doc__table { width: 100%; border-collapse: collapse; }
+  .pergola-doc__table tr { border-bottom: 1px solid rgba(20, 18, 15, .12); }
+  .pergola-doc__table th, .pergola-doc__table td {
+    text-align: left; padding: 7px 0; font-size: 13px; vertical-align: top;
+  }
+  .pergola-doc__table th {
+    width: 42%; font-weight: 400; color: #8c8578;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .pergola-doc__table td { color: #14120f; font-weight: 500; }
+
+  .pergola-doc__foot {
+    margin-top: auto; padding-top: 16px;
+    border-top: 1px solid rgba(20, 18, 15, .2);
+  }
+  .pergola-doc__foot strong {
+    font-family: var(--font-impact); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em; font-size: 13px;
+    margin-right: 10px;
+  }
+  .pergola-doc__foot span {
+    font-family: var(--font-mono); font-size: 10.5px; color: #8c8578;
+  }
+  .pergola-doc__foot p {
+    margin-top: 8px; font-size: 10.5px; color: #8c8578; max-width: 62ch;
+  }
 }

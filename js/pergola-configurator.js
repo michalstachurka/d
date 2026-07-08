@@ -176,4 +176,86 @@ if (mount) {
   toggleBtn.addEventListener("click", openPanel);
   closeBtn.addEventListener("click", closePanel);
   scrim.addEventListener("click", closePanel);
+
+  /* ---------- Eksport PDF projektu ---------- */
+  const exportBtn = document.getElementById("pergolaExport");
+  const doc = {
+    date: document.getElementById("pergolaDocDate"),
+    render: document.getElementById("pergolaDocRender"),
+    title: document.getElementById("pergolaDocTitle"),
+    spec: document.getElementById("pergolaDocSpec"),
+    table: document.getElementById("pergolaDocTable"),
+  };
+
+  const ledLabel = () => {
+    if (state.ledLinear && state.ledSpots) return "Liniowe (rynny) + punktowe (lamele)";
+    if (state.ledLinear) return "Liniowe (rynny)";
+    if (state.ledSpots) return "Punktowe (lamele)";
+    return "Bez oświetlenia";
+  };
+
+  const specLine = () =>
+    `${state.widths.map((w) => w.toFixed(1)).join(" + ")} × ` +
+    `${state.depth.toFixed(1)} × ${state.height.toFixed(1)} m · ${state.angle}°`;
+
+  const fillDoc = () => {
+    doc.date.textContent = new Date().toLocaleDateString("pl-PL", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+    doc.spec.textContent = specLine();
+    const totalW = state.widths.reduce((a, b) => a + b, 0).toFixed(1);
+    const rows = [
+      ["Moduły", state.widths.length === 1 ? "1 moduł" : `${state.widths.length} moduły`],
+      ["Szerokość" + (state.widths.length > 1 ? " (moduły)" : ""),
+        state.widths.length > 1
+          ? `${state.widths.map((w) => w.toFixed(1)).join(" + ")} m  ·  razem ${totalW} m`
+          : `${state.widths[0].toFixed(1)} m`],
+      ["Wysięg (głębokość)", `${state.depth.toFixed(1)} m`],
+      ["Wysokość", `${state.height.toFixed(2)} m`],
+      ["Otwarcie lameli", `${state.angle}°`],
+      ["Kolor konstrukcji", state.frame.label],
+      ["Kolor lameli", state.slat.label],
+      ["Oświetlenie LED", ledLabel()],
+    ];
+    doc.table.innerHTML = rows
+      .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`)
+      .join("");
+  };
+
+  if (exportBtn) {
+    let printing = false;
+    // „is-printing" na <body> włącza tryb karty projektu tylko w @media print,
+    // więc na ekranie nic nie zmienia. Zdejmujemy je dopiero, gdy okno druku
+    // faktycznie się zamknie — nie po sztywnym timerze, bo użytkownik może
+    // trzymać otwarty podgląd wydruku dowolnie długo.
+    const endPrint = () => document.body.classList.remove("is-printing");
+    window.addEventListener("afterprint", endPrint);
+    const mql = window.matchMedia && window.matchMedia("print");
+    if (mql && mql.addEventListener) {
+      mql.addEventListener("change", (e) => { if (!e.matches) endPrint(); });
+    }
+
+    exportBtn.addEventListener("click", async () => {
+      if (printing) return;
+      printing = true;
+      exportBtn.classList.add("is-busy");
+      try {
+        fillDoc();
+        doc.render.src = canvas.snapshot();
+        // Poczekaj, aż obraz się zdekoduje, żeby nie trafił pusty na wydruk.
+        if (doc.render.decode) {
+          try { await doc.render.decode(); } catch (_) { /* i tak drukujemy */ }
+        }
+        if (document.fonts && document.fonts.ready) {
+          try { await document.fonts.ready; } catch (_) { /* ignore */ }
+        }
+        closePanel();
+        document.body.classList.add("is-printing");
+        window.print();
+      } finally {
+        exportBtn.classList.remove("is-busy");
+        printing = false;
+      }
+    });
+  }
 }

@@ -392,6 +392,11 @@
             <button type="button" id="pergolaLedSpots" aria-pressed="false">Punktowe · lamele</button>
           </div>
         </div>
+
+        <button type="button" class="pergola3d__export" id="pergolaExport">
+          <span>Pobierz projekt PDF</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></g></svg>
+        </button>
       </div>
       <div class="pergola3d__scrim" id="pergolaScrim"></div>
     </div>
@@ -617,6 +622,44 @@
 </section>
 
 </main>
+
+<!-- ============ DOKUMENT PDF (widoczny tylko przy druku/eksporcie) ============ -->
+<div class="pergola-doc" id="pergolaDoc" aria-hidden="true">
+  <header class="pergola-doc__head">
+    <div class="pergola-doc__brand">
+      <svg class="pergola-doc__mark" viewBox="0 0 26 26" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6" fill="none"><line x1="4" y1="3" x2="4" y2="23"/><line x1="10" y1="3" x2="10" y2="23"/><line x1="16" y1="3" x2="16" y2="23"/><line x1="22" y1="3" x2="22" y2="23"/></g></svg>
+      <div>
+        <strong>Świat Pergoli</strong>
+        <span>architektura cienia</span>
+      </div>
+    </div>
+    <div class="pergola-doc__meta">
+      <span id="pergolaDocDate"></span>
+      <span>Projekt z konfiguratora 3D</span>
+    </div>
+  </header>
+
+  <figure class="pergola-doc__render">
+    <img id="pergolaDocRender" alt="Wizualizacja pergoli">
+  </figure>
+
+  <div class="pergola-doc__body">
+    <p class="pergola-doc__eyebrow">Twoja konfiguracja</p>
+    <h1 class="pergola-doc__title" id="pergolaDocTitle">Pergola bioklimatyczna</h1>
+    <p class="pergola-doc__spec" id="pergolaDocSpec"></p>
+    <table class="pergola-doc__table">
+      <tbody id="pergolaDocTable"></tbody>
+    </table>
+  </div>
+
+  <footer class="pergola-doc__foot">
+    <div>
+      <strong>Świat Pergoli</strong>
+      <span>+48 602 249 578 · kontakt@swiatpergoli.com · swiatpergoli.com</span>
+    </div>
+    <p>Wizualizacja poglądowa. Ostateczne wymiary, dobór rozwiązań i wycena potwierdzane są po pomiarze na miejscu.</p>
+  </footer>
+</div>
 
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
