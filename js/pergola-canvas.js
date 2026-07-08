@@ -19,6 +19,26 @@ function shadowTexture() {
   return new THREE.CanvasTexture(c);
 }
 
+/** Alpha-mapa tkaniny screen: drobna, gęsta siatka (nitki kryjące + oczka
+ *  prześwitujące) — dzięki temu roleta jest „przezierna" jak realny screen,
+ *  a nie jednolicie przezroczysta ani kryjąca. */
+function screenMeshAlpha() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#ffffff"; // nitki — pełne krycie
+  ctx.fillRect(0, 0, 32, 32);
+  ctx.fillStyle = "#8f8f8f"; // oczka — prześwit (~55%)
+  const step = 4;
+  for (let y = 0; y < 32; y += step)
+    for (let x = 0; x < 32; x += step)
+      ctx.fillRect(x + 1, y + 1, step - 2, step - 2);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(52, 34);
+  return t;
+}
+
 /**
  * @param {HTMLElement} mountEl - kontener na canvas (wypełnia go 100%x100%)
  * @param {object} initialParams - PergolaParams
@@ -109,6 +129,34 @@ export function createPergolaCanvas(mountEl, initialParams) {
     el.style.cursor = placementCb ? "crosshair" : "grab";
   };
 
+  // Który bok pergoli jest zwrócony do kamery (do auto-ustawiania nogi).
+  const getFacingSide = () => {
+    const dx = camera.position.x - controls.target.x;
+    const dz = camera.position.z - controls.target.z;
+    if (Math.abs(dz) >= Math.abs(dx)) return dz >= 0 ? "front" : "back";
+    return dx >= 0 ? "right" : "left";
+  };
+
+  // Rzut punktu 3D na piksele wewnątrz canvasu (do pozycjonowania strzałek).
+  const project = (x, y, z) => {
+    const v = new THREE.Vector3(x, y, z).project(camera);
+    const rect = renderer.domElement.getBoundingClientRect();
+    return {
+      x: (v.x * 0.5 + 0.5) * rect.width,
+      y: (-v.y * 0.5 + 0.5) * rect.height,
+      behind: v.z > 1,
+    };
+  };
+
+  // Pauza auto-obrotu (np. gdy użytkownik ustawia nogę), bez zmiany
+  // ustawienia „Animacja ruchu".
+  let spinPaused = false;
+  const setSpinPaused = (v) => { spinPaused = !!v; };
+
+  // Callback wołany co klatkę (do przeliczania pozycji nakładki strzałek).
+  let onFrame = null;
+  const setOnFrame = (cb) => { onFrame = cb || null; };
+
   // Spokojniejszy, bardziej kontrolowany obrót przeciągnięciem
   controls.rotateSpeed = window.matchMedia("(pointer: coarse)").matches ? 0.9 : 0.55;
   // maxPolarAngle is managed per-frame in the render loop
@@ -160,16 +208,17 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const glowMaterial = new THREE.MeshBasicMaterial({ color: "#f2f6ff" });
   glowMaterial.toneMapped = false;
 
-  // Rolety screen — tkanina techniczna. Renderujemy tylko FrontSide, a
-  // normalne każdego boku skierowane są na ZEWNĄTRZ. Efekt jak w realnym
-  // screenie: z zewnątrz płótno jest kryjące (nie widać środka pergoli),
-  // a od wewnątrz tylna ściana jest odrzucana (backface culling), więc
-  // patrząc ze środka widać na zewnątrz.
+  // Rolety screen — tkanina techniczna „przezierna": gęsta siatka z drobnymi
+  // oczkami (alphaMap), przez którą częściowo widać, ale która daje cień i
+  // prywatność. Widoczna z obu stron (DoubleSide).
   const screenMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#c9b79c"),
-    roughness: 0.92,
+    roughness: 0.9,
     metalness: 0,
-    side: THREE.FrontSide,
+    transparent: true,
+    opacity: 0.95,
+    alphaMap: screenMeshAlpha(),
+    side: THREE.DoubleSide,
   });
   // Przeszklenia — tafla szkła: mocno przezroczysta, gładka, lekko chłodna.
   const glassMaterial = new THREE.MeshStandardMaterial({
@@ -509,7 +558,9 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const r = camera.position.distanceTo(controls.target);
       const cosMax = (0.25 - controls.target.y) / r;
       controls.maxPolarAngle = Math.acos(Math.max(-0.995, Math.min(0.995, cosMax)));
+      controls.autoRotate = paramsRef.spin && !spinPaused;
       controls.update();
+      if (onFrame) onFrame();
       // Ease the camera distance toward the frame that fits the structure
       const des = stateRef.desiredRadius;
       if (des !== undefined) {
@@ -571,5 +622,5 @@ export function createPergolaCanvas(mountEl, initialParams) {
     return out.toDataURL("image/png");
   }
 
-  return { update, destroy, snapshot, setPlacement };
+  return { update, destroy, snapshot, setPlacement, getFacingSide, project, setSpinPaused, setOnFrame };
 }

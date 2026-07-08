@@ -291,52 +291,118 @@ if (mount) {
   closeBtn.addEventListener("click", closePanel);
   scrim.addEventListener("click", closePanel);
 
-  /* ---------- Dodatkowe nogi (wskazywane kliknięciem na modelu) ---------- */
+  /* ---------- Dodatkowe nogi (auto na ścianie od kamery + strzałki) ---------- */
   const addLegBtn = document.getElementById("pergolaAddLeg");
   const clearLegsBtn = document.getElementById("pergolaClearLegs");
   const legCountEl = document.getElementById("pergolaLegCount");
   const legHint = document.getElementById("pergolaLegHint");
+  const legAdjust = document.getElementById("legAdjust");
+  const legLeftBtn = document.getElementById("legLeft");
+  const legRightBtn = document.getElementById("legRight");
+  const legDelBtn = document.getElementById("legDel");
+  const legDoneBtn = document.getElementById("legDone");
   const POST = 0.14;
+  const totalWidth = () => state.widths.reduce((a, b) => a + b, 0);
   const syncLegs = () => { legCountEl.textContent = String(state.extraLegs.length); };
   syncLegs();
 
-  // Dosuń kliknięty punkt do najbliższej krawędzi obrysu (nogi wspierają belkę).
-  const snapLeg = (x, z) => {
-    const totalW = state.widths.reduce((a, b) => a + b, 0);
-    const halfW = totalW / 2, halfD = state.depth / 2;
-    const dEdgeX = Math.min(Math.abs(x - halfW), Math.abs(x + halfW));
-    const dEdgeZ = Math.min(Math.abs(z - halfD), Math.abs(z + halfD));
-    if (dEdgeX < dEdgeZ) {
-      return { x: x > 0 ? halfW - POST / 2 : -halfW + POST / 2, z: clamp(z, -halfD + POST, halfD - POST) };
-    }
-    return { x: clamp(x, -halfW + POST, halfW - POST), z: z > 0 ? halfD - POST / 2 : -halfD + POST / 2 };
+  let activeLeg = -1;      // indeks regulowanej nogi
+  let activeSide = "front";
+
+  // Środek wskazanej ściany (start nogi).
+  const sideCenter = (side) => {
+    const halfW = totalWidth() / 2, halfD = state.depth / 2;
+    if (side === "front") return { x: 0, z: halfD - POST / 2 };
+    if (side === "back") return { x: 0, z: -halfD + POST / 2 };
+    if (side === "left") return { x: -halfW + POST / 2, z: 0 };
+    return { x: halfW - POST / 2, z: 0 };
   };
-  const stopPlacement = () => {
-    canvas.setPlacement(null);
-    addLegBtn.setAttribute("aria-pressed", "false");
+
+  // Pozycjonowanie nakładki strzałek na rzucie nogi (co klatkę).
+  const positionAdjust = () => {
+    if (activeLeg < 0 || !state.extraLegs[activeLeg]) return;
+    const leg = state.extraLegs[activeLeg];
+    const p = canvas.project(leg.x, state.height * 0.5, leg.z);
+    legAdjust.style.left = `${p.x}px`;
+    legAdjust.style.top = `${p.y}px`;
+    legAdjust.style.opacity = p.behind ? "0" : "1";
+  };
+
+  const startAdjust = (idx, side) => {
+    activeLeg = idx;
+    activeSide = side;
+    legAdjust.hidden = false;
+    legAdjust.setAttribute("aria-hidden", "false");
+    legHint.hidden = false;
+    canvas.setSpinPaused(true);
+    canvas.setOnFrame(positionAdjust);
+    positionAdjust();
+  };
+  const stopAdjust = () => {
+    activeLeg = -1;
+    legAdjust.hidden = true;
+    legAdjust.setAttribute("aria-hidden", "true");
     legHint.hidden = true;
+    canvas.setSpinPaused(false);
+    canvas.setOnFrame(null);
   };
-  const onPlace = (rawX, rawZ) => {
-    const totalW = state.widths.reduce((a, b) => a + b, 0);
-    if (Math.abs(rawX) > totalW / 2 + 1.2 || Math.abs(rawZ) > state.depth / 2 + 1.2) return;
-    const leg = snapLeg(rawX, rawZ);
-    const idx = state.extraLegs.findIndex((l) => Math.hypot(l.x - leg.x, l.z - leg.z) < 0.35);
-    if (idx >= 0) state.extraLegs.splice(idx, 1); // klik w istniejącą nogę → usuń
-    else if (state.extraLegs.length < 12) state.extraLegs.push(leg);
+
+  addLegBtn.addEventListener("click", () => {
+    if (state.extraLegs.length >= 12) return;
+    const side = canvas.getFacingSide();
+    const leg = sideCenter(side);
+    state.extraLegs.push(leg);
     syncLegs();
     push();
+    startAdjust(state.extraLegs.length - 1, side);
+    closePanel(); // na mobile odsłoń model
+  });
+
+  // Przesuwanie nogi wzdłuż ściany — kierunek zgodny z ekranem.
+  const nudge = (screenDir) => {
+    if (activeLeg < 0) return;
+    const leg = state.extraLegs[activeLeg];
+    const along = (activeSide === "front" || activeSide === "back") ? "x" : "z";
+    const span = (along === "x" ? totalWidth() : state.depth) / 2 - POST;
+    const p0 = canvas.project(leg.x, state.height * 0.5, leg.z);
+    const probe = { x: leg.x, z: leg.z };
+    probe[along] += 0.1;
+    const p1 = canvas.project(probe.x, state.height * 0.5, probe.z);
+    const plusIsRight = (p1.x - p0.x) >= 0;
+    const dt = ((screenDir > 0) === plusIsRight ? 1 : -1) * 0.12;
+    leg[along] = clamp(leg[along] + dt, -span, span);
+    push();
   };
-  addLegBtn.addEventListener("click", () => {
-    if (addLegBtn.getAttribute("aria-pressed") === "true") { stopPlacement(); return; }
-    addLegBtn.setAttribute("aria-pressed", "true");
-    legHint.hidden = false;
-    canvas.setPlacement(onPlace);
-    closePanel(); // na mobile odsłoń model do klikania
+
+  // Klik = jeden krok; przytrzymanie = powtarzanie.
+  const holdRepeat = (btn, dir) => {
+    let timer = 0;
+    const start = (e) => {
+      e.preventDefault();
+      nudge(dir);
+      timer = setInterval(() => nudge(dir), 90);
+    };
+    const stop = () => { clearInterval(timer); timer = 0; };
+    btn.addEventListener("pointerdown", start);
+    btn.addEventListener("pointerup", stop);
+    btn.addEventListener("pointerleave", stop);
+    btn.addEventListener("pointercancel", stop);
+  };
+  holdRepeat(legLeftBtn, -1);
+  holdRepeat(legRightBtn, 1);
+
+  legDoneBtn.addEventListener("click", stopAdjust);
+  legDelBtn.addEventListener("click", () => {
+    if (activeLeg >= 0) state.extraLegs.splice(activeLeg, 1);
+    syncLegs();
+    push();
+    stopAdjust();
   });
   clearLegsBtn.addEventListener("click", () => {
     state.extraLegs = [];
     syncLegs();
     push();
+    stopAdjust();
   });
 
   /* ---------- Eksport PDF projektu ---------- */

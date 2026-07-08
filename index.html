@@ -335,6 +335,14 @@
     <div class="pergola3d__module" data-reveal>
       <div class="pergola3d__stage">
         <div class="pergola3d__canvas" id="pergolaMount" aria-busy="true"></div>
+        <div class="leg-adjust" id="legAdjust" hidden aria-hidden="true">
+          <button type="button" class="leg-adjust__arrow leg-adjust__arrow--left" id="legLeft" aria-label="Przesuń nogę w lewo">‹</button>
+          <div class="leg-adjust__hub">
+            <button type="button" class="leg-adjust__act leg-adjust__del" id="legDel" aria-label="Usuń tę nogę">✕</button>
+            <button type="button" class="leg-adjust__act leg-adjust__done" id="legDone" aria-label="Gotowe">✓</button>
+          </div>
+          <button type="button" class="leg-adjust__arrow leg-adjust__arrow--right" id="legRight" aria-label="Przesuń nogę w prawo">›</button>
+        </div>
         <button type="button" class="pergola3d__options-toggle" id="pergolaOptionsToggle"
                 aria-expanded="false" aria-controls="pergolaPanel">
           Opcje
@@ -417,10 +425,10 @@
         <div class="pergola3d__group">
           <span class="pergola3d__label">Dodatkowe nogi · <b id="pergolaLegCount">0</b></span>
           <div class="pergola3d__pills">
-            <button type="button" id="pergolaAddLeg" aria-pressed="false">+ Dodaj nogę</button>
+            <button type="button" id="pergolaAddLeg">+ Dodaj nogę</button>
             <button type="button" id="pergolaClearLegs">Wyczyść</button>
           </div>
-          <p class="pergola3d__hint" id="pergolaLegHint" hidden>Kliknij na modelu miejsce, w którym ma stanąć noga (dosuwa się do najbliższej krawędzi). Kliknij istniejącą nogę, aby ją usunąć.</p>
+          <p class="pergola3d__hint" id="pergolaLegHint" hidden>Noga staje na ścianie zwróconej do Ciebie. Strzałkami przesuwasz ją po tej ścianie; obróć model, aby dodać nogę z innej strony.</p>
         </div>
 
         <button type="button" class="pergola3d__export" id="pergolaExport">

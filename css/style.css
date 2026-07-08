@@ -755,6 +755,49 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 }
 .pergola3d__canvas { width: 100%; height: 100%; }
 .pergola3d__canvas canvas { display: block; }
+
+/* Nakładka regulacji nogi — pozycjonowana skryptem na rzucie słupa. */
+.leg-adjust {
+  position: absolute; top: 0; left: 0; z-index: 6;
+  display: flex; align-items: center; gap: 10px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.leg-adjust[hidden] { display: none; }
+.leg-adjust__arrow, .leg-adjust__act {
+  pointer-events: auto;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(22, 21, 19, .18);
+  background: rgba(255, 255, 255, .92);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(22, 21, 19, .22);
+  cursor: pointer;
+  transition: background-color .2s, color .2s, transform .2s var(--ease-out);
+}
+.leg-adjust__arrow {
+  width: 46px; height: 46px;
+  font-size: 1.7rem; line-height: 1;
+  border-color: var(--ember);
+  color: var(--ember);
+  animation: leg-pulse 1.15s ease-in-out infinite;
+}
+.leg-adjust__arrow--left { animation-name: leg-pulse-left; }
+.leg-adjust__arrow--right { animation-name: leg-pulse-right; }
+.leg-adjust__arrow:hover { background: var(--ember); color: #fff; }
+.leg-adjust__hub { display: flex; flex-direction: column; gap: 6px; }
+.leg-adjust__act { width: 30px; height: 30px; font-size: .95rem; }
+.leg-adjust__done { border-color: var(--ember); color: var(--ember); }
+.leg-adjust__done:hover { background: var(--ember); color: #fff; }
+.leg-adjust__del:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+@keyframes leg-pulse-left {
+  0%, 100% { transform: translateX(0); opacity: .85; }
+  50% { transform: translateX(-5px); opacity: 1; }
+}
+@keyframes leg-pulse-right {
+  0%, 100% { transform: translateX(0); opacity: .85; }
+  50% { transform: translateX(5px); opacity: 1; }
+}
 .pergola3d__stagefoot {
   position: absolute; left: 0; right: 0; bottom: 0;
   display: flex; align-items: center; justify-content: space-between;
