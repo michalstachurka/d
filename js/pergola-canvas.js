@@ -19,20 +19,24 @@ function shadowTexture() {
   return new THREE.CanvasTexture(c);
 }
 
-/** Alpha-mapa tkaniny screen: drobna, gęsta siatka (nitki kryjące + oczka
- *  prześwitujące) — dzięki temu roleta jest „przezierna" jak realny screen,
- *  a nie jednolicie przezroczysta ani kryjąca. */
-function screenMeshAlpha() {
+/** Delikatny splot tkaniny screen (mapa koloru): jasne tło z cienką, ciemniejszą
+ *  siatką nitek. Mnożone przez kolor materiału daje wrażenie tkaniny, a nie
+ *  gładkiej płyty. Krycie zapewnia sam materiał (bez dziur = z zewnątrz nie
+ *  widać wnętrza). */
+function screenWeaveMap() {
   const c = document.createElement("canvas");
   c.width = c.height = 32;
   const ctx = c.getContext("2d");
-  ctx.fillStyle = "#ffffff"; // nitki — pełne krycie
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, 32, 32);
-  ctx.fillStyle = "#8f8f8f"; // oczka — prześwit (~55%)
-  const step = 4;
-  for (let y = 0; y < 32; y += step)
-    for (let x = 0; x < 32; x += step)
-      ctx.fillRect(x + 1, y + 1, step - 2, step - 2);
+  ctx.strokeStyle = "rgba(0,0,0,0.16)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 32; i += 4) {
+    ctx.beginPath();
+    ctx.moveTo(i + 0.5, 0); ctx.lineTo(i + 0.5, 32);
+    ctx.moveTo(0, i + 0.5); ctx.lineTo(32, i + 0.5);
+    ctx.stroke();
+  }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(52, 34);
@@ -76,9 +80,13 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  // Delikatne światło wypełniające — bez niego spód lameli (odwrócony od
-  // env. mapy) wychodzi niemal czarny niezależnie od koloru materiału.
-  scene.add(new THREE.HemisphereLight("#f4f1ea", "#2a241c", 0.65));
+  // Światło wypełniające. Kolor „ziemi" (dolny) rozjaśnia powierzchnie
+  // zwrócone w dół — spód lameli — żeby przy niskim ujęciu kamery pokazywał
+  // rzeczywisty kolor materiału, a nie wychodził czarny.
+  scene.add(new THREE.HemisphereLight("#f4f1ea", "#cdc6b8", 0.9));
+  // Miękki ambient dodatkowo podnosi najciemniejsze, odwrócone od światła
+  // faktury (spód lameli), bez spłaszczania całości.
+  scene.add(new THREE.AmbientLight("#ffffff", 0.22));
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
   camera.position.set(6.4, 0.95, 7.6);
@@ -208,17 +216,16 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const glowMaterial = new THREE.MeshBasicMaterial({ color: "#f2f6ff" });
   glowMaterial.toneMapped = false;
 
-  // Rolety screen — tkanina techniczna „przezierna": gęsta siatka z drobnymi
-  // oczkami (alphaMap), przez którą częściowo widać, ale która daje cień i
-  // prywatność. Widoczna z obu stron (DoubleSide).
+  // Rolety screen — efekt jednokierunkowy jak w realnym screenie: renderujemy
+  // tylko stronę zewnętrzną (FrontSide, normalne na zewnątrz), więc Z ZEWNĄTRZ
+  // tkanina jest kryjąca (nie widać wnętrza pergoli), a ZE ŚRODKA tylna ściana
+  // jest odrzucana i widać na zewnątrz. Splot (map) nadaje jej charakter tkaniny.
   const screenMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#c9b79c"),
-    roughness: 0.9,
+    roughness: 0.92,
     metalness: 0,
-    transparent: true,
-    opacity: 0.95,
-    alphaMap: screenMeshAlpha(),
-    side: THREE.DoubleSide,
+    map: screenWeaveMap(),
+    side: THREE.FrontSide,
   });
   // Przeszklenia — tafla szkła: mocno przezroczysta, gładka, lekko chłodna.
   const glassMaterial = new THREE.MeshStandardMaterial({
@@ -416,30 +423,71 @@ export function createPergolaCanvas(mountEl, initialParams) {
     stateRef.screenGuides = screenGuides;
     stateRef.fabricTop = fabricTop;
 
-    // Przeszklenia (szkło) na wskazanych bokach — tafla + dolna szyna +
-    // pionowy słupek, żeby czytało się jako szklana zabudowa/szyby.
+    // Przeszklenia (szkło) na wskazanych bokach — dwa skrzydła w aluminiowych
+    // ramkach: jedno stałe, drugie przesuwane. Dolna szyna prowadzi skrzydło.
+    // Przy „Animacji ruchu" ruchome skrzydło rozsuwa się i zsuwa (pętla).
+    const glassPanes = [];
     if (p.glass) {
       const paneH = H - beam;
-      const gI = 0.005;
-      const mkGlass = (width, x, z, rotY) => {
-        const pane = new THREE.Mesh(new THREE.PlaneGeometry(width, paneH), glassMaterial);
-        pane.position.set(x, paneH / 2, z);
-        pane.rotation.y = rotY;
-        group.add(pane);
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(width, 0.05, 0.06), material);
-        rail.position.set(x, 0.025, z);
-        rail.rotation.y = rotY;
-        group.add(rail);
-        const mull = new THREE.Mesh(new THREE.BoxGeometry(0.04, paneH, 0.05), material);
-        mull.position.set(x, paneH / 2, z);
-        mull.rotation.y = rotY;
-        group.add(mull);
+      const mkSash = (w) => {
+        const g = new THREE.Group();
+        g.add(new THREE.Mesh(new THREE.PlaneGeometry(w, paneH), glassMaterial));
+        const fr = 0.045;
+        const bar = (bw, bh, bx, by) => {
+          const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.05), material);
+          b.position.set(bx, by, 0);
+          g.add(b);
+        };
+        bar(w, fr, 0, paneH / 2 - fr / 2);
+        bar(w, fr, 0, -paneH / 2 + fr / 2);
+        bar(fr, paneH, -w / 2 + fr / 2, 0);
+        bar(fr, paneH, w / 2 - fr / 2, 0);
+        return g;
       };
-      if (p.glass.front) mkGlass(totalW - post, 0, D / 2 - gI, 0);
-      if (p.glass.back) mkGlass(totalW - post, 0, -D / 2 + gI, 0);
-      if (p.glass.left) mkGlass(D - post, -totalW / 2 + gI, 0, Math.PI / 2);
-      if (p.glass.right) mkGlass(D - post, totalW / 2 - gI, 0, Math.PI / 2);
+      const addGlass = (side) => {
+        const along = side === "front" || side === "back" ? "x" : "z";
+        const fullW = (along === "x" ? totalW : D) - post;
+        const rotY = side === "front" ? 0 : side === "back" ? Math.PI : side === "left" ? -Math.PI / 2 : Math.PI / 2;
+        const y = paneH / 2;
+        let perpAxis, perpBase, inwardSign;
+        if (side === "front") { perpAxis = "z"; perpBase = D / 2 - 0.03; inwardSign = -1; }
+        else if (side === "back") { perpAxis = "z"; perpBase = -D / 2 + 0.03; inwardSign = 1; }
+        else if (side === "left") { perpAxis = "x"; perpBase = -totalW / 2 + 0.03; inwardSign = 1; }
+        else { perpAxis = "x"; perpBase = totalW / 2 - 0.03; inwardSign = -1; }
+        // Skrzydła ~75 cm szerokości, ułożone w rzędzie na całej ścianie.
+        const n = Math.max(2, Math.round(fullW / 0.75));
+        const w = fullW / n;
+        const sashW = w + 0.015; // minimalny zakład
+        const stackGap = Math.min(0.07, w * 0.14); // odstęp skrzydeł w schowku
+        const place = (grp, u, perpOff) => {
+          grp.rotation.y = rotY;
+          const pos = { x: 0, y, z: 0 };
+          pos[along] = u;
+          pos[perpAxis] = perpBase + perpOff;
+          grp.position.set(pos.x, pos.y, pos.z);
+        };
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(fullW, 0.05, 0.09), material);
+        rail.rotation.y = rotY;
+        const rp = { x: 0, y: 0.025, z: 0 };
+        rp[perpAxis] = perpBase + inwardSign * 0.02;
+        rail.position.set(rp.x, rp.y, rp.z);
+        group.add(rail);
+        for (let i = 0; i < n; i++) {
+          const closedU = -fullW / 2 + (i + 0.5) * w;   // rząd, pełne przeszklenie
+          const openU = fullW / 2 - w / 2 - i * stackGap; // zsunięte i złożone z boku
+          const perpOff = inwardSign * (0.02 + i * 0.014); // każde skrzydło na swoim torze
+          const sash = mkSash(sashW);
+          place(sash, closedU, perpOff);
+          group.add(sash);
+          glassPanes.push({ grp: sash, along, closed: closedU, open: openU });
+        }
+      };
+      if (p.glass.front) addGlass("front");
+      if (p.glass.back) addGlass("back");
+      if (p.glass.left) addGlass("left");
+      if (p.glass.right) addGlass("right");
     }
+    stateRef.glassPanes = glassPanes;
 
     // Dodatkowe nogi wskazane przez użytkownika (klik na modelu). Słup od
     // ziemi do belki, w kolorze konstrukcji, z drobną stopką.
@@ -531,11 +579,17 @@ export function createPergolaCanvas(mountEl, initialParams) {
         for (const sl of stateRef.slats) sl.rotation.x = rot;
       }
       // Rolety screen — miękkie opuszczanie/zwijanie każdego boku osobno.
+      // Przy „Animacji ruchu" włączone rolety cyklicznie opadają i zwijają się.
       if (stateRef.screens) {
         const want = p.screens || {};
         const fTop = stateRef.fabricTop || 0;
+        const now = performance.now() / 1000;
         for (const side of SCREEN_SIDES) {
-          const target = want[side] ? 1 : 0;
+          let target = want[side] ? 1 : 0;
+          if (p.spin && want[side]) {
+            const phase = SCREEN_SIDES.indexOf(side) * 1.5;
+            target = 0.5 - 0.46 * Math.cos((now + phase) * 0.5); // 0.04..0.96
+          }
           screenAnim[side] += (target - screenAnim[side]) * 0.12;
           if (Math.abs(target - screenAnim[side]) < 0.002) screenAnim[side] = target;
           const anim = screenAnim[side];
@@ -551,6 +605,15 @@ export function createPergolaCanvas(mountEl, initialParams) {
           }
           const guides = stateRef.screenGuides && stateRef.screenGuides[side];
           if (guides) for (const g of guides) g.visible = vis;
+        }
+      }
+      // Przeszklenia — przy „Animacji ruchu" ruchome skrzydło rozsuwa się
+      // i zsuwa; w spoczynku pozostaje zamknięte.
+      if (stateRef.glassPanes && stateRef.glassPanes.length) {
+        const gt = performance.now() / 1000;
+        const openAmt = p.spin ? (0.5 - 0.5 * Math.cos(gt * 0.5)) : 0;
+        for (const gp of stateRef.glassPanes) {
+          gp.grp.position[gp.along] = gp.closed + openAmt * (gp.open - gp.closed);
         }
       }
       // Keep the camera above ground by limiting tilt for the current
