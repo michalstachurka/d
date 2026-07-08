@@ -21,6 +21,8 @@ if (mount) {
   ];
 
   const SIDE_LABELS = { front: "Przód", back: "Tył", left: "Lewa", right: "Prawa" };
+  const SIDES = ["front", "back", "left", "right"];
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
   const state = {
     widths: [4],
@@ -33,8 +35,30 @@ if (mount) {
     ledSpots: false,
     screens: { front: false, back: false, left: false, right: false },
     screenFabric: SCREEN_COLORS[0],
+    glass: { front: false, back: false, left: false, right: false },
     spin: true,
   };
+
+  // Wczytanie konfiguracji z linku (?w=4-4&d=3.2&...&scr=bl&sf=grafit&gl=f).
+  const applyFromURL = () => {
+    const q = new URLSearchParams(window.location.search);
+    if (![...q.keys()].length) return;
+    const w = (q.get("w") || "").split("-").map(Number).filter((n) => n >= 2 && n <= 6).slice(0, 2);
+    if (w.length) state.widths = w.map((n) => Math.round(n * 10) / 10);
+    if (q.get("d")) state.depth = clamp(Number(q.get("d")), 2.5, 4.5);
+    if (q.get("h")) state.height = clamp(Number(q.get("h")), 2.2, 3.2);
+    if (q.get("a")) state.angle = clamp(Math.round(Number(q.get("a"))), 0, 120);
+    const fc = COLORS.find((c) => c.id === q.get("fc")); if (fc) state.frame = fc;
+    const sc = COLORS.find((c) => c.id === q.get("sc")); if (sc) state.slat = sc;
+    const led = q.get("led") || "";
+    state.ledLinear = led.includes("l"); state.ledSpots = led.includes("s");
+    const scr = q.get("scr") || "";
+    SIDES.forEach((s) => { state.screens[s] = scr.includes(s[0]); });
+    const sf = SCREEN_COLORS.find((c) => c.id === q.get("sf")); if (sf) state.screenFabric = sf;
+    const gl = q.get("gl") || "";
+    SIDES.forEach((s) => { state.glass[s] = gl.includes(s[0]); });
+  };
+  applyFromURL();
 
   const params = () => ({
     widths: state.widths,
@@ -47,8 +71,27 @@ if (mount) {
     ledSpots: state.ledSpots,
     screens: { ...state.screens },
     screenColor: state.screenFabric.value,
+    glass: { ...state.glass },
     spin: state.spin,
   });
+
+  // Zbudowanie linku do bieżącej konfiguracji.
+  const encodeState = () => {
+    const q = new URLSearchParams();
+    q.set("w", state.widths.map((v) => v.toFixed(1)).join("-"));
+    q.set("d", state.depth.toFixed(1));
+    q.set("h", state.height.toFixed(2));
+    q.set("a", String(state.angle));
+    q.set("fc", state.frame.id);
+    q.set("sc", state.slat.id);
+    const led = (state.ledLinear ? "l" : "") + (state.ledSpots ? "s" : "");
+    if (led) q.set("led", led);
+    const scr = SIDES.filter((s) => state.screens[s]).map((s) => s[0]).join("");
+    if (scr) { q.set("scr", scr); q.set("sf", state.screenFabric.id); }
+    const gl = SIDES.filter((s) => state.glass[s]).map((s) => s[0]).join("");
+    if (gl) q.set("gl", gl);
+    return `${window.location.origin}${window.location.pathname}?${q.toString()}#konfigurator-3d`;
+  };
 
   const canvas = createPergolaCanvas(mount, params());
   mount.setAttribute("aria-busy", "false");
@@ -90,22 +133,27 @@ if (mount) {
     });
   };
 
+  const syncModules = () => modulesGroup.querySelectorAll("button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(Number(b.dataset.modules) === state.widths.length)));
   modulesGroup.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       const m = Number(btn.dataset.modules);
       if (m === state.widths.length) return;
       state.widths = m > state.widths.length ? [...state.widths, 4] : state.widths.slice(0, m);
-      modulesGroup.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      syncModules();
       renderWidths();
       push();
     });
   });
   renderWidths();
+  syncModules();
 
   /* ---------- Wysięg / wysokość / kąt lameli ---------- */
   const bindSlider = (id, valId, key, decimals) => {
     const input = document.getElementById(id);
     const out = document.getElementById(valId);
+    input.value = state[key];
+    out.textContent = decimals > 0 ? state[key].toFixed(decimals) : String(state[key]);
     input.addEventListener("input", () => {
       state[key] = Number(input.value);
       out.textContent = decimals > 0 ? state[key].toFixed(decimals) : String(state[key]);
@@ -147,10 +195,13 @@ if (mount) {
   };
   bindToggle("pergolaLedLinear", "ledLinear");
   bindToggle("pergolaLedSpots", "ledSpots");
+  document.getElementById("pergolaLedLinear").setAttribute("aria-pressed", String(state.ledLinear));
+  document.getElementById("pergolaLedSpots").setAttribute("aria-pressed", String(state.ledSpots));
 
   /* ---------- Rolety screen: boki + kolor tkaniny ---------- */
   const screensGroup = document.getElementById("pergolaScreens");
   screensGroup.querySelectorAll("button").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(state.screens[btn.dataset.side]));
     btn.addEventListener("click", () => {
       const side = btn.dataset.side;
       state.screens[side] = !state.screens[side];
@@ -169,6 +220,18 @@ if (mount) {
     btn.addEventListener("click", () => {
       state.screenFabric = SCREEN_COLORS.find((c) => c.id === btn.dataset.id);
       screenColorHost.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      push();
+    });
+  });
+
+  /* ---------- Przeszklenia: boki ---------- */
+  const glassGroup = document.getElementById("pergolaGlass");
+  glassGroup.querySelectorAll("button").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(state.glass[btn.dataset.side]));
+    btn.addEventListener("click", () => {
+      const side = btn.dataset.side;
+      state.glass[side] = !state.glass[side];
+      btn.setAttribute("aria-pressed", String(state.glass[side]));
       push();
     });
   });
@@ -234,10 +297,16 @@ if (mount) {
   };
 
   const screensLabel = () => {
-    const on = ["front", "back", "left", "right"].filter((s) => state.screens[s]);
+    const on = SIDES.filter((s) => state.screens[s]);
     if (!on.length) return "Bez rolet";
     const sides = on.map((s) => SIDE_LABELS[s]).join(", ");
-    return `${sides} · tkanina ${state.screenFabric.label}`;
+    return `${sides} · skrzynka 10,5 cm · tkanina ${state.screenFabric.label}`;
+  };
+
+  const glassLabel = () => {
+    const on = SIDES.filter((s) => state.glass[s]);
+    if (!on.length) return "Bez przeszkleń";
+    return on.map((s) => SIDE_LABELS[s]).join(", ");
   };
 
   const specLine = () =>
@@ -263,6 +332,7 @@ if (mount) {
       ["Kolor lameli", state.slat.label],
       ["Oświetlenie LED", ledLabel()],
       ["Rolety screen", screensLabel()],
+      ["Przeszklenia", glassLabel()],
     ];
     doc.table.innerHTML = rows
       .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`)
@@ -325,6 +395,9 @@ if (mount) {
         `• Kolor lameli: ${state.slat.label}`,
         `• Oświetlenie LED: ${ledLabel()}`,
         `• Rolety screen: ${screensLabel()}`,
+        `• Przeszklenia: ${glassLabel()}`,
+        "",
+        `Link do projektu: ${encodeState()}`,
         "",
         "Proszę o kontakt i orientacyjną wycenę.",
       ];
@@ -343,6 +416,45 @@ if (mount) {
       // Po dojechaniu do formularza ustaw kursor w pierwszym polu.
       const nameField = contactForm.querySelector('[name="name"]');
       if (nameField) setTimeout(() => nameField.focus({ preventScroll: true }), 700);
+    });
+  }
+
+  /* ---------- Skopiuj link do projektu ---------- */
+  const copyBtn = document.getElementById("pergolaCopyLink");
+  const copyLabel = document.getElementById("pergolaCopyLinkLabel");
+  if (copyBtn && copyLabel) {
+    const defaultLabel = copyLabel.textContent;
+    let resetTimer = 0;
+    const flash = (text, ok) => {
+      copyLabel.textContent = text;
+      copyBtn.classList.toggle("is-copied", ok);
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        copyLabel.textContent = defaultLabel;
+        copyBtn.classList.remove("is-copied");
+      }, 1800);
+    };
+    copyBtn.addEventListener("click", async () => {
+      const link = encodeState();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = link;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+        flash("Skopiowano link ✓", true);
+      } catch (_) {
+        // Ostateczny fallback — pokaż link do ręcznego skopiowania.
+        window.prompt("Skopiuj link do projektu:", link);
+        flash(defaultLabel, false);
+      }
     });
   }
 }

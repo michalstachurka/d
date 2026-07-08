@@ -816,6 +816,9 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   height: 1px; background: rgba(241, 235, 224, .22);
 }
 .pergola3d__swatches { display: flex; flex-wrap: wrap; gap: 16px; }
+/* Kolor tkaniny screen idzie zaraz po rzędzie boków — odrobina oddechu,
+   żeby próbki nie kleiły się do przycisków wyżej. */
+#pergolaScreenColor { margin-top: 16px; }
 .pergola3d__swatches button {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
@@ -864,6 +867,21 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 }
 .pergola3d__inquiry:hover { border-color: var(--copper-hi); color: var(--copper-hi); transform: translateY(-2px); }
 .pergola3d__inquiry svg { flex: none; }
+.pergola3d__copylink {
+  margin-top: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(241, 235, 224, .62);
+  background: transparent;
+  border: 1px dashed var(--line-on-dark);
+  transition: border-color .3s var(--ease-out), color .3s var(--ease-out);
+}
+.pergola3d__copylink:hover { border-color: var(--copper-hi); color: var(--copper-hi); }
+.pergola3d__copylink.is-copied { border-style: solid; border-color: var(--ember); color: var(--ember-hi); }
+.pergola3d__copylink svg { flex: none; }
 .pergola3d__scrim { display: none; }
 
 @media (max-width: 900px) {

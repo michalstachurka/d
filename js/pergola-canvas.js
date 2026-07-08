@@ -143,6 +143,16 @@ export function createPergolaCanvas(mountEl, initialParams) {
     opacity: 0.82,
     side: THREE.DoubleSide,
   });
+  // Przeszklenia — tafla szkła: mocno przezroczysta, gładka, lekko chłodna.
+  const glassMaterial = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#cddfe6"),
+    roughness: 0.05,
+    metalness: 0,
+    transparent: true,
+    opacity: 0.24,
+    side: THREE.DoubleSide,
+  });
+  glassMaterial.envMapIntensity = 1.3;
   // Postęp animacji opuszczania (0 = zwinięta u góry, 1 = w pełni opuszczona).
   // Trzymany poza rebuild(), żeby zmiany nie przerywały animacji.
   const screenAnim = { front: 0, back: 0, left: 0, right: 0 };
@@ -264,29 +274,91 @@ export function createPergolaCanvas(mountEl, initialParams) {
       }
     }
 
-    // Rolety screen na obwodzie — jedno płótno na bok, zawieszone pod belką.
-    // Geometria przesunięta tak, że górna krawędź jest w punkcie zaczepienia,
-    // więc skalowanie w osi Y „opuszcza" roletę z góry na dół (animacja).
+    // Rolety screen na obwodzie — kaseta (skrzynka) pod belką + płótno, które
+    // zwisa od jej spodu. Geometria płótna przesunięta tak, że górna krawędź
+    // jest w punkcie zaczepienia, więc skalowanie w osi Y „opuszcza" roletę.
     const screens = {};
-    const screenTop = H - beam;
+    const screenBoxes = {};
+    const screenBars = {};
+    const screenGuides = {};
+    const cassetteH = 0.105; // skrzynka rolety — 10,5 cm
+    const fabricTop = H - beam - cassetteH; // płótno startuje od spodu skrzynki
     const inset = 0.02;
     const mkScreen = (side, width, x, z, rotY) => {
-      const geo = new THREE.PlaneGeometry(width, screenTop, 1, 1);
-      geo.translate(0, -screenTop / 2, 0); // górna krawędź w local y = 0
+      // skrzynka w kolorze konstrukcji, tuż pod belką
+      const box = new THREE.Mesh(new THREE.BoxGeometry(width, cassetteH, 0.11), material);
+      box.position.set(x, H - beam - cassetteH / 2, z);
+      box.rotation.y = rotY;
+      group.add(box);
+      screenBoxes[side] = box;
+      // płótno — od spodu skrzynki do ziemi
+      const geo = new THREE.PlaneGeometry(width, fabricTop, 1, 1);
+      geo.translate(0, -fabricTop / 2, 0); // górna krawędź w local y = 0
       const m = new THREE.Mesh(geo, screenMaterial);
-      m.position.set(x, screenTop, z);
+      m.position.set(x, fabricTop, z);
       m.rotation.y = rotY;
       const prog = Math.max(screenAnim[side], 0.0001);
       m.scale.y = prog;
-      m.visible = prog > 0.003;
+      const vis = prog > 0.003;
+      m.visible = vis;
+      box.visible = vis;
       group.add(m);
       screens[side] = m;
+      // dolna listwa aluminiowa (obciążnik) — podąża za dołem płótna (pętla)
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(width, 0.05, 0.075), material);
+      bar.rotation.y = rotY;
+      bar.position.set(x, fabricTop, z);
+      bar.visible = vis;
+      group.add(bar);
+      screenBars[side] = bar;
+      // prowadnice boczne (ZIP) — stałe pionowe szyny na krawędziach płótna
+      const guideGeo = new THREE.BoxGeometry(0.05, fabricTop, 0.075);
+      const pair = [];
+      for (const sgn of [-1, 1]) {
+        const g = new THREE.Mesh(guideGeo, material);
+        g.rotation.y = rotY;
+        if (rotY === 0) g.position.set(x + sgn * (width / 2), fabricTop / 2, z);
+        else g.position.set(x, fabricTop / 2, z + sgn * (width / 2));
+        g.visible = vis;
+        group.add(g);
+        pair.push(g);
+      }
+      screenGuides[side] = pair;
     };
     mkScreen("front", totalW - post, 0, D / 2 - inset, 0);
     mkScreen("back", totalW - post, 0, -D / 2 + inset, 0);
     mkScreen("left", D - post, -totalW / 2 + inset, 0, Math.PI / 2);
     mkScreen("right", D - post, totalW / 2 - inset, 0, Math.PI / 2);
     stateRef.screens = screens;
+    stateRef.screenBoxes = screenBoxes;
+    stateRef.screenBars = screenBars;
+    stateRef.screenGuides = screenGuides;
+    stateRef.fabricTop = fabricTop;
+
+    // Przeszklenia (szkło) na wskazanych bokach — tafla + dolna szyna +
+    // pionowy słupek, żeby czytało się jako szklana zabudowa/szyby.
+    if (p.glass) {
+      const paneH = H - beam;
+      const gI = 0.005;
+      const mkGlass = (width, x, z, rotY) => {
+        const pane = new THREE.Mesh(new THREE.PlaneGeometry(width, paneH), glassMaterial);
+        pane.position.set(x, paneH / 2, z);
+        pane.rotation.y = rotY;
+        group.add(pane);
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(width, 0.05, 0.06), material);
+        rail.position.set(x, 0.025, z);
+        rail.rotation.y = rotY;
+        group.add(rail);
+        const mull = new THREE.Mesh(new THREE.BoxGeometry(0.04, paneH, 0.05), material);
+        mull.position.set(x, paneH / 2, z);
+        mull.rotation.y = rotY;
+        group.add(mull);
+      };
+      if (p.glass.front) mkGlass(totalW - post, 0, D / 2 - gI, 0);
+      if (p.glass.back) mkGlass(totalW - post, 0, -D / 2 + gI, 0);
+      if (p.glass.left) mkGlass(D - post, -totalW / 2 + gI, 0, Math.PI / 2);
+      if (p.glass.right) mkGlass(D - post, totalW / 2 - gI, 0, Math.PI / 2);
+    }
 
     ground.scale.setScalar(Math.max(totalW, D) * 1.9);
     shadow.scale.set(totalW * 1.6, D * 1.7, 1);
@@ -367,15 +439,24 @@ export function createPergolaCanvas(mountEl, initialParams) {
       // Rolety screen — miękkie opuszczanie/zwijanie każdego boku osobno.
       if (stateRef.screens) {
         const want = p.screens || {};
+        const fTop = stateRef.fabricTop || 0;
         for (const side of SCREEN_SIDES) {
           const target = want[side] ? 1 : 0;
           screenAnim[side] += (target - screenAnim[side]) * 0.12;
           if (Math.abs(target - screenAnim[side]) < 0.002) screenAnim[side] = target;
+          const anim = screenAnim[side];
+          const vis = anim > 0.003;
           const m = stateRef.screens[side];
-          if (m) {
-            m.scale.y = Math.max(screenAnim[side], 0.0001);
-            m.visible = screenAnim[side] > 0.003;
+          if (m) { m.scale.y = Math.max(anim, 0.0001); m.visible = vis; }
+          const box = stateRef.screenBoxes && stateRef.screenBoxes[side];
+          if (box) box.visible = vis;
+          const bar = stateRef.screenBars && stateRef.screenBars[side];
+          if (bar) {
+            bar.visible = vis;
+            bar.position.y = Math.min(fTop, fTop * (1 - anim) + 0.025); // dolna krawędź płótna
           }
+          const guides = stateRef.screenGuides && stateRef.screenGuides[side];
+          if (guides) for (const g of guides) g.visible = vis;
         }
       }
       // Keep the camera above ground by limiting tilt for the current
