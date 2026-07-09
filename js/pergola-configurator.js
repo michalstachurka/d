@@ -25,6 +25,7 @@ if (mount) {
   const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
   const state = {
+    construction: "freestanding", // freestanding | wall | roof
     widths: [4],
     depth: 3.2,
     height: 2.6,
@@ -44,6 +45,8 @@ if (mount) {
   const applyFromURL = () => {
     const q = new URLSearchParams(window.location.search);
     if (![...q.keys()].length) return;
+    const ct = { f: "freestanding", w: "wall", r: "roof" }[q.get("ct")];
+    if (ct) state.construction = ct;
     const w = (q.get("w") || "").split("-").map(Number).filter((n) => n >= 2 && n <= 6).slice(0, 2);
     if (w.length) state.widths = w.map((n) => Math.round(n * 10) / 10);
     if (q.get("d")) state.depth = clamp(Number(q.get("d")), 2.5, 4.5);
@@ -69,6 +72,7 @@ if (mount) {
   applyFromURL();
 
   const params = () => ({
+    construction: state.construction,
     widths: state.widths,
     depth: state.depth,
     height: state.height,
@@ -87,6 +91,7 @@ if (mount) {
   // Zbudowanie linku do bieżącej konfiguracji.
   const encodeState = () => {
     const q = new URLSearchParams();
+    q.set("ct", { freestanding: "f", wall: "w", roof: "r" }[state.construction]);
     q.set("w", state.widths.map((v) => v.toFixed(1)).join("-"));
     q.set("d", state.depth.toFixed(1));
     q.set("h", state.height.toFixed(2));
@@ -119,6 +124,23 @@ if (mount) {
     canvas.update(params());
     updateSpec();
   };
+
+  const CONSTRUCTION_LABELS = {
+    freestanding: "Wolnostojąca",
+    wall: "Przyścienna (montaż do ściany)",
+    roof: "Moduł dachowy (kołnierz betonowy)",
+  };
+
+  /* ---------- Rodzaj konstrukcji ---------- */
+  const constructionGroup = document.getElementById("pergolaConstruction");
+  constructionGroup.querySelectorAll("button").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.construction === state.construction));
+    btn.addEventListener("click", () => {
+      state.construction = btn.dataset.construction;
+      constructionGroup.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      push();
+    });
+  });
 
   /* ---------- Moduły + suwaki szerokości ---------- */
   const modulesGroup = document.getElementById("pergolaModules");
@@ -446,6 +468,7 @@ if (mount) {
     doc.spec.textContent = specLine();
     const totalW = state.widths.reduce((a, b) => a + b, 0).toFixed(1);
     const rows = [
+      ["Rodzaj konstrukcji", CONSTRUCTION_LABELS[state.construction]],
       ["Moduły", state.widths.length === 1 ? "1 moduł" : `${state.widths.length} moduły`],
       ["Szerokość" + (state.widths.length > 1 ? " (moduły)" : ""),
         state.widths.length > 1
@@ -512,6 +535,7 @@ if (mount) {
       const lines = [
         "Zapytanie z konfiguratora 3D — moja pergola:",
         "",
+        `• Rodzaj konstrukcji: ${CONSTRUCTION_LABELS[state.construction]}`,
         `• Moduły: ${state.widths.length === 1 ? "1 moduł" : state.widths.length + " moduły"}`,
         `• Szerokość: ${state.widths.map((w) => w.toFixed(1)).join(" + ")} m` +
           (state.widths.length > 1 ? ` (razem ${totalW} m)` : ""),

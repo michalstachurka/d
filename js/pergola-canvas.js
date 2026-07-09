@@ -237,6 +237,9 @@ export function createPergolaCanvas(mountEl, initialParams) {
     side: THREE.DoubleSide,
   });
   glassMaterial.envMapIntensity = 1.5;
+  // Ściana (konstrukcja przyścienna) i opaska betonowa (moduł dachowy).
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: "#d9d3c7", roughness: 0.96, metalness: 0 });
+  const concreteMaterial = new THREE.MeshStandardMaterial({ color: "#c4bfb5", roughness: 0.9, metalness: 0 });
   // Postęp animacji opuszczania (0 = zwinięta u góry, 1 = w pełni opuszczona).
   // Trzymany poza rebuild(), żeby zmiany nie przerywały animacji.
   const screenAnim = { front: 0, back: 0, left: 0, right: 0 };
@@ -267,9 +270,14 @@ export function createPergolaCanvas(mountEl, initialParams) {
         group.add(m);
       };
 
-      // Posts
+      // Posts — zależnie od rodzaju konstrukcji:
+      //  wolnostojąca: wszystkie 4 nogi · przyścienna: tylko przód (+z) ·
+      //  moduł dachowy: bez nóg (opaska betonowa dodana niżej).
+      const zSides = p.construction === "roof" ? []
+        : p.construction === "wall" ? [1]
+        : [-1, 1];
       for (const sx of [-1, 1])
-        for (const sz of [-1, 1])
+        for (const sz of zSides)
           box(post, H, post, (sx * (W - post)) / 2, H / 2, (sz * (D - post)) / 2);
       // Top frame
       box(W, beam, post, 0, H - beam / 2, -(D - post) / 2);
@@ -344,6 +352,29 @@ export function createPergolaCanvas(mountEl, initialParams) {
       centers.push(acc + w / 2);
       buildModule(acc + w / 2, w);
       acc += w;
+    }
+
+    // Przyścienna — ściana z tyłu (−z), do której zamontowana jest pergola.
+    if (p.construction === "wall") {
+      const wallH = H + 0.7;
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(totalW + 0.7, wallH, 0.12), wallMaterial);
+      wall.position.set(0, wallH / 2, -D / 2 - 0.06);
+      group.add(wall);
+    }
+    // Moduł dachowy — opaska (kołnierz) betonowa wokół górnej ramy, bez nóg.
+    if (p.construction === "roof") {
+      const cw = 0.24, ch = 0.34;
+      const yC = H - beam / 2;
+      const collar = (w, d, x, z) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, ch, d), concreteMaterial);
+        m.position.set(x, yC, z);
+        group.add(m);
+      };
+      const oW = totalW + 2 * cw;
+      collar(oW, cw, 0, D / 2 + cw / 2);            // przód
+      collar(oW, cw, 0, -D / 2 - cw / 2);           // tył
+      collar(cw, D, -totalW / 2 - cw / 2, 0);       // lewy
+      collar(cw, D, totalW / 2 + cw / 2, 0);        // prawy
     }
 
     // LEDs actually cast light: a soft pool on the ground under each module
