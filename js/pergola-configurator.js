@@ -2,6 +2,7 @@
 // z pergola-canvas.js. Kolejność kontrolek, kolejność kolorów i domyślne
 // wartości zgodne z dostarczoną specyfikacją (PergolaConfigurator.tsx).
 import { createPergolaCanvas } from "./pergola-canvas.js";
+import { setupPergolaAR } from "./ar-controller.js";
 
 const mount = document.getElementById("pergolaMount");
 if (mount) {
@@ -320,6 +321,7 @@ if (mount) {
   };
   toggleBtn.addEventListener("click", openPanel);
   closeBtn.addEventListener("click", closePanel);
+  setupPergolaAR({ canvas, closeOptionsPanel: closePanel });
 
   /* ---------- Dodatkowe nogi (wybór boku → strzałki do przesuwania) ---------- */
   const addLegBtn = document.getElementById("pergolaAddLeg");

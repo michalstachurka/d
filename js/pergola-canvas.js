@@ -250,8 +250,15 @@ export function createPergolaCanvas(mountEl, initialParams) {
   });
   const slatMaterial = material.clone();
   // Crisp cool-white LED, like real pergola strips
-  const glowMaterial = new THREE.MeshBasicMaterial({ color: "#f2f6ff" });
-  glowMaterial.toneMapped = false;
+  // Widoczna geometria LED z prawdziwą emisją. Dzięki temu światło pozostaje
+  // czytelne również po eksporcie do GLB/USDZ, gdzie lampy sceny są pomijane.
+  const glowMaterial = new THREE.MeshStandardMaterial({
+    color: "#fff8e8",
+    emissive: "#f2f6ff",
+    emissiveIntensity: 3.2,
+    roughness: 0.35,
+    metalness: 0,
+  });
 
   // Rolety screen — realny screen jest JEDNOKIERUNKOWY, ale nie „na wylot".
   // Dlatego każde płótno to DWIE nałożone warstwy renderowane tylko od czoła
@@ -304,7 +311,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
     metalness: 0,
     transparent: true,
     opacity: 0.3,
-    side: THREE.DoubleSide,
+    depthWrite: false,
   });
   glassMaterial.envMapIntensity = 1.5;
   // Ściana (konstrukcja przyścienna) i opaska betonowa (moduł dachowy).
@@ -325,6 +332,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
       if (o instanceof THREE.Light) o.dispose();
     });
     group = new THREE.Group();
+    group.name = "PergolaVisualRoot";
     const slats = [];
 
     const H = p.height;
@@ -355,6 +363,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
         const inset = post * 0.55;
         const mk = (w, d, x, z) => {
           const m = new THREE.Mesh(new THREE.BoxGeometry(w, t, d), glowMaterial);
+          m.name = "LED_Linear";
           m.position.set(cx + x, y, z);
           group.add(m);
         };
@@ -387,6 +396,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
       for (let i = 0; i < n; i++) {
         const z = -(D - 2 * post) / 2 + (i + 0.5) * ((D - 2 * post) / n);
         const slat = new THREE.Mesh(new THREE.BoxGeometry(span, 0.015, slatW * 1.01), slatMaterial);
+        slat.name = "RoofLouvre";
+        slat.userData.arRole = "slat";
         slat.position.set(cx, H - beam / 2, z);
         slat.rotation.x = THREE.MathUtils.degToRad(p.slatAngle);
         group.add(slat);
@@ -401,6 +412,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
               new THREE.CylinderGeometry(0.0224, 0.0224, 0.01, 14),
               glowMaterial,
             );
+            dot.name = "LED_Spot";
             // Child of the slat so spots tilt with the louvre (flush mount)
             dot.position.set(x, -0.01, 0);
             slat.add(dot);
@@ -446,6 +458,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const wallH = H + 0.7;
       const wall = new THREE.Mesh(new THREE.BoxGeometry(totalW + 0.7, wallH, 0.12), wallMaterial);
       wall.position.set(0, wallH / 2, -D / 2 - 0.06);
+      wall.name = "TechnicalWall";
+      wall.userData.arExclude = true;
       group.add(wall);
     }
     // Moduł dachowy — opaska (kołnierz) betonowa wokół górnej ramy, bez nóg.
@@ -455,6 +469,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const collar = (w, d, x, z) => {
         const m = new THREE.Mesh(new THREE.BoxGeometry(w, ch, d), concreteMaterial);
         m.position.set(x, yC, z);
+        m.name = "TechnicalRoofCollar";
+        m.userData.arExclude = true;
         group.add(m);
       };
       const oW = totalW + 2 * cw;
@@ -471,6 +487,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
         const sp = new THREE.SpotLight("#f2f6ff", strength, H * 5, 1.15, 0.7, 1.3);
         sp.position.set(cx, H - beam, 0);
         sp.target.position.set(cx, 0, 0);
+        sp.userData.arExclude = true;
+        sp.target.userData.arExclude = true;
         group.add(sp);
         group.add(sp.target);
       }
@@ -518,6 +536,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const vis = prog > 0.003;
       // skrzynka w kolorze konstrukcji, tuż pod belką
       const box = new THREE.Mesh(new THREE.BoxGeometry(width, cassetteH, 0.11), material);
+      box.name = `ScreenCassette_${side}`;
+      box.userData.arSide = side;
       box.position.set(x, H - beam - cassetteH / 2, z);
       box.rotation.y = rotY;
       box.visible = vis;
@@ -529,6 +549,9 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const geo = new THREE.PlaneGeometry(width, fabricTop, 1, 1);
       geo.translate(0, -fabricTop / 2, 0); // górna krawędź w local y = 0
       const grp = new THREE.Group();
+      grp.name = `ScreenFabric_${side}`;
+      grp.userData.arSide = side;
+      grp.userData.arRole = "screenFabric";
       grp.position.set(x, fabricTop, z);
       grp.rotation.y = rotY;
       grp.add(new THREE.Mesh(geo, screenMaterial));        // widok Z ZEWNĄTRZ
@@ -542,6 +565,9 @@ export function createPergolaCanvas(mountEl, initialParams) {
       screens[side].push(grp);
       // dolna listwa aluminiowa (obciążnik) — podąża za dołem płótna (pętla)
       const bar = new THREE.Mesh(new THREE.BoxGeometry(width, 0.05, 0.075), material);
+      bar.name = `ScreenBottomBar_${side}`;
+      bar.userData.arSide = side;
+      bar.userData.arRole = "screenBar";
       bar.rotation.y = rotY;
       bar.position.set(x, fabricTop, z);
       bar.visible = vis;
@@ -552,6 +578,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
       const pair = [];
       for (const sgn of [-1, 1]) {
         const g = new THREE.Mesh(guideGeo, material);
+        g.name = `ScreenGuide_${side}`;
+        g.userData.arSide = side;
         g.rotation.y = rotY;
         if (axisX) g.position.set(x + sgn * (width / 2), fabricTop / 2, z);
         else g.position.set(x, fabricTop / 2, z + sgn * (width / 2));
@@ -588,7 +616,12 @@ export function createPergolaCanvas(mountEl, initialParams) {
       // Bezramowe skrzydło — sama tafla szkła, bez aluminiowej ramki.
       const mkSash = (w) => {
         const g = new THREE.Group();
-        g.add(new THREE.Mesh(new THREE.PlaneGeometry(w, paneH), glassMaterial));
+        g.name = "GlassSash";
+        g.userData.arRole = "glassSash";
+        // Cienka bryła zamiast dwustronnej płaszczyzny: szkło pozostaje
+        // widoczne z obu stron także w Quick Look, który nie wspiera
+        // dwustronnych materiałów USDZ.
+        g.add(new THREE.Mesh(new THREE.BoxGeometry(w, paneH, 0.008), glassMaterial));
         return g;
       };
       // Przeszklenie jednego segmentu ściany (segment = odcinek między nogami
@@ -627,6 +660,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
           const openU = segCenter + fullW / 2 - w / 2 - i * stackGap; // zsunięte i złożone z boku
           const perpOff = inwardSign * (0.02 + i * 0.014); // każde skrzydło na swoim torze
           const sash = mkSash(sashW);
+          sash.userData.arAlong = along;
+          sash.userData.arClosed = closedU;
           place(sash, closedU, perpOff);
           group.add(sash);
           glassPanes.push({ grp: sash, along, closed: closedU, open: openU });
@@ -851,5 +886,90 @@ export function createPergolaCanvas(mountEl, initialParams) {
     return out.toDataURL("image/png");
   }
 
-  return { update, destroy, snapshot, setPlacement, getFacingSide, cameraDir, project, setSpinPaused, setOnFrame };
+  /**
+   * Buduje niezależny, statyczny model przeznaczony wyłącznie do AR.
+   * Nie klonuje kamery, świateł, podłoża, cienia ani elementów technicznych.
+   * Geometrie i materiały są kopiowane, więc eksporter może je bezpiecznie
+   * przetwarzać i zwalniać bez wpływu na interaktywną scenę konfiguratora.
+   */
+  function createExportClone() {
+    const selectedScreens = paramsRef.screens || {};
+    const materialClones = new Map();
+    const cloneMaterial = (sourceMaterial) => {
+      if (!materialClones.has(sourceMaterial)) materialClones.set(sourceMaterial, sourceMaterial.clone());
+      return materialClones.get(sourceMaterial);
+    };
+
+    const cloneForExport = (source) => {
+      if (source.userData?.arExclude) return null;
+      if (source.userData?.arSide && !selectedScreens[source.userData.arSide]) return null;
+      if (!source.isGroup && !source.isMesh) return null;
+
+      const target = source.clone(false);
+      target.visible = source.userData?.arSide ? true : source.visible;
+
+      if (source.isMesh) {
+        target.geometry = source.geometry.clone();
+        target.material = Array.isArray(source.material)
+          ? source.material.map(cloneMaterial)
+          : cloneMaterial(source.material);
+      }
+
+      for (const child of source.children) {
+        const clonedChild = cloneForExport(child);
+        if (clonedChild) target.add(clonedChild);
+      }
+
+      if (target.userData.arRole === "slat") {
+        target.rotation.x = THREE.MathUtils.degToRad(paramsRef.slatAngle);
+      } else if (target.userData.arRole === "screenFabric") {
+        target.scale.y = 1;
+        target.visible = true;
+      } else if (target.userData.arRole === "screenBar") {
+        target.position.y = 0.025;
+        target.visible = true;
+      } else if (target.userData.arRole === "glassSash") {
+        target.position[target.userData.arAlong] = target.userData.arClosed;
+      }
+
+      return target;
+    };
+
+    const root = cloneForExport(group) || new THREE.Group();
+    root.name = "PergolaRoot";
+    root.visible = true;
+    root.updateMatrixWorld(true);
+
+    // 1 jednostka Three.js już oznacza 1 metr. Jedynie ustawiamy punkt
+    // odniesienia: środek w X/Z i najniższy punkt dokładnie na podłodze Y=0.
+    let bounds = new THREE.Box3().setFromObject(root);
+    if (!bounds.isEmpty()) {
+      const center = bounds.getCenter(new THREE.Vector3());
+      root.position.x -= center.x;
+      root.position.z -= center.z;
+      root.position.y -= bounds.min.y;
+      root.updateMatrixWorld(true);
+      bounds = new THREE.Box3().setFromObject(root);
+      if (Math.abs(bounds.min.y) > 1e-8) {
+        root.position.y -= bounds.min.y;
+        root.updateMatrixWorld(true);
+        bounds = new THREE.Box3().setFromObject(root);
+      }
+    }
+
+    const size = bounds.getSize(new THREE.Vector3());
+    let objectCount = 0;
+    root.traverseVisible((object) => { if (object.isMesh) objectCount += 1; });
+    root.userData.arMetrics = {
+      width: size.x,
+      depth: size.z,
+      height: size.y,
+      minY: bounds.min.y,
+      objectCount,
+    };
+    root.updateMatrixWorld(true);
+    return root;
+  }
+
+  return { update, destroy, snapshot, createExportClone, setPlacement, getFacingSide, cameraDir, project, setSpinPaused, setOnFrame };
 }

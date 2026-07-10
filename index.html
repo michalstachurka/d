@@ -24,6 +24,7 @@
   }
 }
 </script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23161513'/%3E%3Cg stroke='%23B97F52' stroke-width='2'%3E%3Cline x1='7' y1='6' x2='7' y2='26'/%3E%3Cline x1='13' y1='6' x2='13' y2='26'/%3E%3Cline x1='19' y1='6' x2='19' y2='26'/%3E%3Cline x1='25' y1='6' x2='25' y2='26'/%3E%3C/g%3E%3C/svg%3E">
 </head>
 <body>
@@ -446,6 +447,11 @@
           <p class="pergola3d__hint" id="pergolaLegHint" hidden>Kliknij bok pergoli, na którym chcesz dodać nogę. Możesz obrócić model.</p>
         </div>
 
+        <button type="button" class="pergola3d__ar" id="pergolaAR">
+          <span class="pergola3d__ar-desktop">Zobacz pergolę w swoim ogrodzie - AR</span>
+          <span class="pergola3d__ar-mobile">Zobacz w AR</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z"/><path d="m4 8.5 8 4.5 8-4.5M12 13v8"/><path d="M8.2 10.8 16 6.4"/></g></svg>
+        </button>
         <button type="button" class="pergola3d__export" id="pergolaExport">
           <span>Pobierz projekt PDF</span>
           <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></g></svg>
@@ -682,6 +688,63 @@
 </section>
 
 </main>
+
+<!-- ============ PODGLĄD I URUCHAMIANIE AR ============ -->
+<div class="ar-modal" id="arModal" hidden aria-hidden="true">
+  <button type="button" class="ar-modal__backdrop" data-ar-close aria-label="Zamknij podgląd AR"></button>
+  <section class="ar-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="arTitle" tabindex="-1">
+    <header class="ar-modal__head">
+      <div>
+        <p class="eyebrow">Rzeczywistość rozszerzona</p>
+        <h2 id="arTitle">Twoja pergola<br><em>w prawdziwej skali.</em></h2>
+      </div>
+      <button type="button" class="ar-modal__x" data-ar-close aria-label="Zamknij">×</button>
+    </header>
+
+    <div class="ar-modal__viewer">
+      <model-viewer id="arModelViewer"
+        ar
+        ar-modes="webxr quick-look"
+        ar-scale="fixed"
+        ar-placement="floor"
+        camera-controls
+        shadow-intensity="1"
+        touch-action="pan-y"
+        alt="Skonfigurowana pergola w rzeczywistości rozszerzonej">
+      </model-viewer>
+      <div class="ar-loader" id="arLoader" role="status" aria-live="polite">
+        <span class="ar-loader__mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <strong id="arStatus">Przygotowuję model AR...</strong>
+        <small>Eksportuję aktualne wymiary, kolory i wyposażenie.</small>
+      </div>
+    </div>
+
+    <p class="ar-modal__message" id="arInfo" hidden></p>
+    <p class="ar-modal__message ar-modal__message--warning" id="arUnsupported" hidden></p>
+    <p class="ar-modal__message ar-modal__message--error" id="arError" role="alert" hidden></p>
+
+    <aside class="ar-debug" id="arDebug" hidden aria-label="Dane diagnostyczne AR">
+      <div class="ar-debug__head"><strong>debugAR</strong><a id="arDownloadGLB">Pobierz GLB</a></div>
+      <dl>
+        <div><dt>Szerokość</dt><dd data-ar-debug="width">—</dd></div>
+        <div><dt>Głębokość</dt><dd data-ar-debug="depth">—</dd></div>
+        <div><dt>Wysokość</dt><dd data-ar-debug="height">—</dd></div>
+        <div><dt>minY</dt><dd data-ar-debug="minY">—</dd></div>
+        <div><dt>Obiekty</dt><dd data-ar-debug="objects">—</dd></div>
+        <div><dt>Rozmiar GLB</dt><dd data-ar-debug="glb">—</dd></div>
+        <div><dt>Rozmiar USDZ</dt><dd data-ar-debug="usdz">—</dd></div>
+        <div><dt>System</dt><dd data-ar-debug="platform">—</dd></div>
+        <div><dt>WebXR</dt><dd data-ar-debug="webxr">—</dd></div>
+        <div><dt>Metoda AR</dt><dd data-ar-debug="method">—</dd></div>
+      </dl>
+    </aside>
+
+    <footer class="ar-modal__actions">
+      <button type="button" class="ar-modal__launch" id="arLaunch" disabled>Uruchom AR</button>
+      <button type="button" class="ar-modal__close" data-ar-close>Zamknij</button>
+    </footer>
+  </section>
+</div>
 
 <!-- ============ DOKUMENT PDF (widoczny tylko przy druku/eksporcie) ============ -->
 <div class="pergola-doc" id="pergolaDoc" aria-hidden="true">
