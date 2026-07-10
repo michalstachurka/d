@@ -335,6 +335,12 @@
     <div class="pergola3d__module" data-reveal>
       <div class="pergola3d__stage">
         <div class="pergola3d__canvas" id="pergolaMount" aria-busy="true"></div>
+        <div class="side-pick" id="sidePick" hidden aria-hidden="true">
+          <button type="button" class="side-pick__chip" data-side="front">Przód</button>
+          <button type="button" class="side-pick__chip" data-side="back">Tył</button>
+          <button type="button" class="side-pick__chip" data-side="left">Lewa</button>
+          <button type="button" class="side-pick__chip" data-side="right">Prawa</button>
+        </div>
         <div class="leg-adjust" id="legAdjust" hidden aria-hidden="true">
           <button type="button" class="leg-adjust__arrow leg-adjust__arrow--left" id="legLeft" aria-label="Przesuń nogę w lewo">‹</button>
           <div class="leg-adjust__hub">
@@ -437,7 +443,7 @@
             <button type="button" id="pergolaAddLeg">+ Dodaj nogę</button>
             <button type="button" id="pergolaClearLegs">Wyczyść</button>
           </div>
-          <p class="pergola3d__hint" id="pergolaLegHint" hidden>Noga staje na ścianie zwróconej do Ciebie. Strzałkami przesuwasz ją po tej ścianie; obróć model, aby dodać nogę z innej strony.</p>
+          <p class="pergola3d__hint" id="pergolaLegHint" hidden>Kliknij bok pergoli, na którym chcesz dodać nogę. Możesz obrócić model.</p>
         </div>
 
         <button type="button" class="pergola3d__export" id="pergolaExport">

@@ -41,6 +41,15 @@ if (mount) {
     spin: true,
   };
 
+  // Bok pergoli najbliższy danej pozycji (x,z) — do odtworzenia „side" nogi
+  // ze starszych linków, które go nie zapisywały.
+  const inferSide = (x, z) => {
+    const halfW = state.widths.reduce((a, b) => a + b, 0) / 2;
+    const halfD = state.depth / 2;
+    const d = { front: Math.abs(z - halfD), back: Math.abs(z + halfD), left: Math.abs(x + halfW), right: Math.abs(x - halfW) };
+    return Object.keys(d).reduce((a, b) => (d[b] < d[a] ? b : a));
+  };
+
   // Wczytanie konfiguracji z linku (?w=4-4&d=3.2&...&scr=bl&sf=grafit&gl=f).
   const applyFromURL = () => {
     const q = new URLSearchParams(window.location.search);
@@ -63,9 +72,12 @@ if (mount) {
     SIDES.forEach((s) => { state.glass[s] = gl.includes(s[0]); });
     const lg = q.get("lg") || "";
     if (lg) {
+      const SIDE_BY_CH = { f: "front", b: "back", l: "left", r: "right" };
       state.extraLegs = lg.split(";").map((pair) => {
-        const [x, z] = pair.split("_").map(Number);
-        return { x, z };
+        const parts = pair.split("_");
+        const x = Number(parts[0]), z = Number(parts[1]);
+        const side = SIDE_BY_CH[parts[2]] || inferSide(x, z);
+        return { x, z, side };
       }).filter((l) => Number.isFinite(l.x) && Number.isFinite(l.z)).slice(0, 12);
     }
   };
@@ -105,7 +117,7 @@ if (mount) {
     const gl = SIDES.filter((s) => state.glass[s]).map((s) => s[0]).join("");
     if (gl) q.set("gl", gl);
     if (state.extraLegs.length) {
-      q.set("lg", state.extraLegs.map((l) => `${l.x.toFixed(2)}_${l.z.toFixed(2)}`).join(";"));
+      q.set("lg", state.extraLegs.map((l) => `${l.x.toFixed(2)}_${l.z.toFixed(2)}_${(l.side || "front")[0]}`).join(";"));
     }
     return `${window.location.origin}${window.location.pathname}?${q.toString()}#konfigurator-3d`;
   };
@@ -313,7 +325,7 @@ if (mount) {
   closeBtn.addEventListener("click", closePanel);
   scrim.addEventListener("click", closePanel);
 
-  /* ---------- Dodatkowe nogi (auto na ścianie od kamery + strzałki) ---------- */
+  /* ---------- Dodatkowe nogi (wybór boku → strzałki do przesuwania) ---------- */
   const addLegBtn = document.getElementById("pergolaAddLeg");
   const clearLegsBtn = document.getElementById("pergolaClearLegs");
   const legCountEl = document.getElementById("pergolaLegCount");
@@ -323,6 +335,8 @@ if (mount) {
   const legRightBtn = document.getElementById("legRight");
   const legDelBtn = document.getElementById("legDel");
   const legDoneBtn = document.getElementById("legDone");
+  const sidePick = document.getElementById("sidePick");
+  const sideChips = sidePick ? [...sidePick.querySelectorAll(".side-pick__chip")] : [];
   const POST = 0.14;
   const totalWidth = () => state.widths.reduce((a, b) => a + b, 0);
   const syncLegs = () => { legCountEl.textContent = String(state.extraLegs.length); };
@@ -330,14 +344,49 @@ if (mount) {
 
   let activeLeg = -1;      // indeks regulowanej nogi
   let activeSide = "front";
+  let picking = false;     // trwa wybór boku
 
-  // Środek wskazanej ściany (start nogi).
+  // Środek wskazanej ściany (start nogi) — na linii słupów.
   const sideCenter = (side) => {
     const halfW = totalWidth() / 2, halfD = state.depth / 2;
     if (side === "front") return { x: 0, z: halfD - POST / 2 };
     if (side === "back") return { x: 0, z: -halfD + POST / 2 };
     if (side === "left") return { x: -halfW + POST / 2, z: 0 };
     return { x: halfW - POST / 2, z: 0 };
+  };
+
+  // Środek zewnętrznego lica każdej ściany (do umieszczenia znacznika boku).
+  const sideFaceCenter = (side) => {
+    const halfW = totalWidth() / 2, halfD = state.depth / 2, y = state.height * 0.5;
+    if (side === "front") return { x: 0, y, z: halfD };
+    if (side === "back") return { x: 0, y, z: -halfD };
+    if (side === "left") return { x: -halfW, y, z: 0 };
+    return { x: halfW, y, z: 0 };
+  };
+
+  // Normalne (poziome) zewnętrznych lic ścian — do wygaszania boków
+  // odwróconych od widza.
+  const SIDE_NORMAL = { front: [0, 1], back: [0, -1], left: [-1, 0], right: [1, 0] };
+
+  // Pozycjonowanie znaczników wyboru boku (co klatkę). Bok odwrócony od
+  // kamery jest chowany, żeby nie dało się kliknąć „przez" model.
+  const positionSidePick = () => {
+    const cam = canvas.cameraDir ? canvas.cameraDir() : null;
+    for (const chip of sideChips) {
+      const c = sideFaceCenter(chip.dataset.side);
+      const pr = canvas.project(c.x, c.y, c.z);
+      let away = pr.behind;
+      if (cam) {
+        const nrm = SIDE_NORMAL[chip.dataset.side];
+        // Iloczyn skalarny normalnej ściany z kierunkiem do kamery (w rzucie
+        // poziomym): ≤0 => ściana zwrócona tyłem lub bokiem do widza.
+        if (nrm[0] * cam.x + nrm[1] * cam.z < 0.03) away = true;
+      }
+      chip.style.left = `${pr.x}px`;
+      chip.style.top = `${pr.y}px`;
+      chip.style.opacity = away ? "0" : "1";
+      chip.style.pointerEvents = away ? "none" : "auto";
+    }
   };
 
   // Pozycjonowanie nakładki strzałek na rzucie nogi (co klatkę).
@@ -350,12 +399,33 @@ if (mount) {
     legAdjust.style.opacity = p.behind ? "0" : "1";
   };
 
+  // Krok 1: wybór boku — podświetlone znaczniki na każdej ścianie pergoli.
+  const startPick = () => {
+    stopAdjust();
+    picking = true;
+    if (sidePick) { sidePick.hidden = false; sidePick.setAttribute("aria-hidden", "false"); }
+    legHint.hidden = false;
+    legHint.textContent = "Kliknij bok pergoli, na którym chcesz dodać nogę. Możesz obrócić model.";
+    addLegBtn.setAttribute("aria-pressed", "true");
+    canvas.setSpinPaused(true);
+    canvas.setOnFrame(positionSidePick);
+    positionSidePick();
+  };
+  const stopPick = () => {
+    picking = false;
+    if (sidePick) { sidePick.hidden = true; sidePick.setAttribute("aria-hidden", "true"); }
+    addLegBtn.setAttribute("aria-pressed", "false");
+    if (activeLeg < 0) { legHint.hidden = true; canvas.setSpinPaused(false); canvas.setOnFrame(null); }
+  };
+
+  // Krok 2: regulacja — strzałki przesuwają nogę po wybranej ścianie.
   const startAdjust = (idx, side) => {
     activeLeg = idx;
     activeSide = side;
     legAdjust.hidden = false;
     legAdjust.setAttribute("aria-hidden", "false");
     legHint.hidden = false;
+    legHint.textContent = "Strzałkami przesuwasz nogę po tej ścianie. ✓ gdy gotowe, ✕ aby usunąć.";
     canvas.setSpinPaused(true);
     canvas.setOnFrame(positionAdjust);
     positionAdjust();
@@ -364,21 +434,29 @@ if (mount) {
     activeLeg = -1;
     legAdjust.hidden = true;
     legAdjust.setAttribute("aria-hidden", "true");
-    legHint.hidden = true;
-    canvas.setSpinPaused(false);
-    canvas.setOnFrame(null);
+    if (!picking) { legHint.hidden = true; canvas.setSpinPaused(false); canvas.setOnFrame(null); }
   };
 
+  // „Dodaj nogę" uruchamia wybór boku (ponowny klik anuluje).
   addLegBtn.addEventListener("click", () => {
+    if (picking) { stopPick(); return; }
     if (state.extraLegs.length >= 12) return;
-    const side = canvas.getFacingSide();
-    const leg = sideCenter(side);
-    state.extraLegs.push(leg);
-    syncLegs();
-    push();
-    startAdjust(state.extraLegs.length - 1, side);
+    startPick();
     closePanel(); // na mobile odsłoń model
   });
+
+  // Klik w bok → dodaj nogę na jego środku i przejdź do regulacji.
+  for (const chip of sideChips) {
+    chip.addEventListener("click", () => {
+      if (state.extraLegs.length >= 12) { stopPick(); return; }
+      const side = chip.dataset.side;
+      state.extraLegs.push({ ...sideCenter(side), side });
+      syncLegs();
+      push();
+      stopPick();
+      startAdjust(state.extraLegs.length - 1, side);
+    });
+  }
 
   // Przesuwanie nogi wzdłuż ściany — kierunek zgodny z ekranem.
   const nudge = (screenDir) => {
@@ -424,6 +502,7 @@ if (mount) {
     state.extraLegs = [];
     syncLegs();
     push();
+    stopPick();
     stopAdjust();
   });
 
