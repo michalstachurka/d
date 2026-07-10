@@ -753,6 +753,15 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
   border: 1px solid var(--line-on-dark);
   overflow: hidden;
 }
+/* Desktop: kadr 3D jest przyklejony podczas przewijania panelu opcji —
+   pergolę widać cały czas, niezależnie od długości menu konfiguracji. */
+@media (min-width: 901px) {
+  .pergola3d__stage {
+    position: sticky;
+    top: 86px;
+    max-height: calc(100vh - 106px);
+  }
+}
 .pergola3d__canvas { width: 100%; height: 100%; }
 .pergola3d__canvas canvas { display: block; }
 
@@ -966,7 +975,6 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
 .pergola3d__copylink:hover { border-color: var(--copper-hi); color: var(--copper-hi); }
 .pergola3d__copylink.is-copied { border-style: solid; border-color: var(--ember); color: var(--ember-hi); }
 .pergola3d__copylink svg { flex: none; }
-.pergola3d__scrim { display: none; }
 
 @media (max-width: 900px) {
   .pergola3d__module { grid-template-columns: 1fr; }
@@ -983,17 +991,12 @@ body.is-loaded .hero__actions.reveal-line > span { opacity: 1; transform: none; 
     backdrop-filter: blur(6px);
     border: 1px solid rgba(22, 21, 19, .18);
   }
-  .pergola3d__scrim {
-    display: block;
-    position: fixed; inset: 0; z-index: 55;
-    background: rgba(20, 18, 15, .5);
-    opacity: 0; pointer-events: none;
-    transition: opacity .35s var(--ease-out);
-  }
-  .pergola3d__scrim.is-open { opacity: 1; pointer-events: auto; }
+  /* Bez przyciemnienia i bez blokady strony: panel to nie-modalny bottom
+     sheet — nad nim cały czas można obracać i oglądać model. */
   .pergola3d__panel {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    max-height: 45vh;
+    max-height: 42vh;
+    box-shadow: 0 -18px 44px rgba(10, 9, 7, .45);
     overflow-y: auto;
     background: var(--ink-2);
     border-top: 1px solid var(--line-on-dark);

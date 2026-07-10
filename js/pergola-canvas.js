@@ -122,7 +122,9 @@ export function createPergolaCanvas(mountEl, initialParams) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.enablePan = false;
-  controls.minDistance = 4.5;
+  // Mały minimalny dystans pozwala wjechać kamerą DO ŚRODKA pergoli
+  // (np. żeby obejrzeć rolety screen od wewnątrz przy zamkniętych bokach).
+  controls.minDistance = 0.7;
   controls.maxDistance = 20;
   // Wheel zoom only after the user grabs the model. The lenis-prevent
   // attribute is toggled together with it: unarmed, wheel events scroll
@@ -268,6 +270,14 @@ export function createPergolaCanvas(mountEl, initialParams) {
     map: screenWeaveMap(),
     side: THREE.FrontSide,
   });
+  // Matowa tkanina nie łapie odbić otoczenia — bez tego przy płaskim kącie
+  // patrzenia fresnel rozjaśniał płótno i TEN SAM kolor wyglądał inaczej
+  // z różnych ujęć kamery.
+  screenMaterial.envMapIntensity = 0;
+  // Lekka emisja w kolorze tkaniny podnosi jej jasność do poziomu próbnika
+  // w panelu (tone mapping przyciemnia), jednakowo z każdego kąta.
+  const SCREEN_GLOW = 0.28;
+  screenMaterial.emissive.copy(screenMaterial.color).multiplyScalar(SCREEN_GLOW);
   const screenInnerMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#c9b79c"),
     roughness: 0.92,
@@ -285,6 +295,8 @@ export function createPergolaCanvas(mountEl, initialParams) {
   // jasnych tkaninach, a kolory obu stron pozostają spójne.
   const INNER_SHADE = 0.62;
   screenInnerMaterial.color.multiplyScalar(INNER_SHADE);
+  screenInnerMaterial.envMapIntensity = 0;
+  screenInnerMaterial.emissive.copy(screenInnerMaterial.color).multiplyScalar(SCREEN_GLOW);
   // Przeszklenia — tafla szkła: mocno przezroczysta, gładka, lekko chłodna.
   const glassMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#cddfe6"),
@@ -690,10 +702,13 @@ export function createPergolaCanvas(mountEl, initialParams) {
   rebuild(initialParams);
   material.color.set(initialParams.frameColor);
   slatMaterial.color.set(initialParams.slatColor);
-  if (initialParams.screenColor) {
-    screenMaterial.color.set(initialParams.screenColor);
-    screenInnerMaterial.color.set(initialParams.screenColor).multiplyScalar(INNER_SHADE);
-  }
+  const applyScreenColor = (hex) => {
+    screenMaterial.color.set(hex);
+    screenMaterial.emissive.copy(screenMaterial.color).multiplyScalar(SCREEN_GLOW);
+    screenInnerMaterial.color.set(hex).multiplyScalar(INNER_SHADE);
+    screenInnerMaterial.emissive.copy(screenInnerMaterial.color).multiplyScalar(SCREEN_GLOW);
+  };
+  if (initialParams.screenColor) applyScreenColor(initialParams.screenColor);
   controls.autoRotate = initialParams.spin;
 
   const resize = () => {
@@ -732,7 +747,10 @@ export function createPergolaCanvas(mountEl, initialParams) {
           let target = want[side] ? 1 : 0;
           if (p.spin && want[side]) {
             const phase = SCREEN_SIDES.indexOf(side) * 1.5;
-            target = 0.5 - 0.46 * Math.cos((now + phase) * 0.5); // 0.04..0.96
+            // Fala przycięta do [0,1]: roleta DOMYKA się do samej ziemi,
+            // chwilę tam zostaje, po czym zwija się w pełni — bez wiecznego
+            // paska prześwitu na dole.
+            target = Math.min(1, Math.max(0, 0.5 - 0.72 * Math.cos((now + phase) * 0.5)));
           }
           screenAnim[side] += (target - screenAnim[side]) * 0.12;
           if (Math.abs(target - screenAnim[side]) < 0.002) screenAnim[side] = target;
@@ -792,10 +810,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
     stateRef.rebuild?.(params);
     stateRef.material?.color.set(params.frameColor);
     stateRef.slatMaterial?.color.set(params.slatColor);
-    if (params.screenColor) {
-      screenMaterial.color.set(params.screenColor);
-      screenInnerMaterial.color.set(params.screenColor).multiplyScalar(INNER_SHADE);
-    }
+    if (params.screenColor) applyScreenColor(params.screenColor);
     if (stateRef.controls) stateRef.controls.autoRotate = params.spin;
     if (!params.spin && stateRef.slats) {
       const rot = THREE.MathUtils.degToRad(params.slatAngle);

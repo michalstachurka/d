@@ -292,21 +292,20 @@ if (mount) {
 
   updateSpec();
 
-  /* ---------- Mobile: panel opcji jako wysuwany bottom sheet ---------- */
+  /* ---------- Mobile: panel opcji jako NIE-modalny bottom sheet ----------
+     Bez scrima i bez blokady strony: gdy panel jest otwarty, model nad nim
+     cały czas można obracać, przybliżać i oglądać. */
   const toggleBtn = document.getElementById("pergolaOptionsToggle");
   const panel = document.getElementById("pergolaPanel");
   const closeBtn = document.getElementById("pergolaPanelClose");
-  const scrim = document.getElementById("pergolaScrim");
   const stage = document.querySelector(".pergola3d__stage");
 
   const openPanel = () => {
     panel.classList.add("is-open");
-    scrim.classList.add("is-open");
     toggleBtn.setAttribute("aria-expanded", "true");
-    document.body.classList.add("is-locked");
-    // Render musi zostać w całości widoczny nad panelem (max 45vh) —
+    // Render musi zostać w całości widoczny nad panelem (max 42vh) —
     // dosuwamy stronę tak, by kadr 3D zmieścił się w wolnej przestrzeni.
-    const sheetHeight = window.innerHeight * 0.45;
+    const sheetHeight = window.innerHeight * 0.42;
     const available = window.innerHeight - sheetHeight;
     const headerSafe = 84;
     const rect = stage.getBoundingClientRect();
@@ -317,13 +316,10 @@ if (mount) {
   };
   const closePanel = () => {
     panel.classList.remove("is-open");
-    scrim.classList.remove("is-open");
     toggleBtn.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("is-locked");
   };
   toggleBtn.addEventListener("click", openPanel);
   closeBtn.addEventListener("click", closePanel);
-  scrim.addEventListener("click", closePanel);
 
   /* ---------- Dodatkowe nogi (wybór boku → strzałki do przesuwania) ---------- */
   const addLegBtn = document.getElementById("pergolaAddLeg");
