@@ -176,22 +176,25 @@
      je znacznik. Ten sam kod działa na desktopie (oś pośrodku) i mobile
      (oś przy lewej krawędzi) — różni je tylko CSS. */
   const processTimeline = $('#processTimeline');
+  const processLine = processTimeline ? $('.process__line', processTimeline) : null;
   const processFill = $('#processFill');
   const processMarker = $('#processMarker');
   const processSteps = $$('.process__step');
   const onProcess = () => {
     if (!processTimeline || !processFill) return;
     const rect = processTimeline.getBoundingClientRect();
+    const lineRect = processLine ? processLine.getBoundingClientRect() : rect;
     // „Linia czytania" na 55% wysokości okna — postęp = jak daleko przeszła
     // przez oś czasu, przycięty do zakresu 0–1.
     const anchor = window.innerHeight * 0.55;
-    const p = clamp((anchor - rect.top) / rect.height, 0, 1);
+    const p = clamp((anchor - lineRect.top) / lineRect.height, 0, 1);
     processFill.style.height = `${(p * 100).toFixed(2)}%`;
     processMarker.style.top = `${(p * 100).toFixed(2)}%`;
-    const fillY = rect.top + rect.height * p;
+    const fillY = lineRect.top + lineRect.height * p;
     processSteps.forEach((s) => {
       const sr = s.getBoundingClientRect();
-      s.classList.toggle('is-active', sr.top + 6 <= fillY + 0.5);
+      // 3 px od góry + połowa węzła 13 px = środek dokładnie na 9,5 px.
+      s.classList.toggle('is-active', sr.top + 9.5 <= fillY + 0.5);
     });
   };
 

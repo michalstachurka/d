@@ -300,10 +300,21 @@ if (mount) {
   const panel = document.getElementById("pergolaPanel");
   const closeBtn = document.getElementById("pergolaPanelClose");
   const stage = document.querySelector(".pergola3d__stage");
+  const arButton = document.getElementById("pergolaAR");
+  let ignoreWindowScrollUntil = 0;
+
+  // CTA AR należy do renderu, nie do przewijanej listy ustawień. Przenosimy
+  // istniejący element, aby zachować jego obsługę i jeden stabilny identyfikator.
+  if (arButton && arButton.parentElement !== stage) {
+    arButton.querySelectorAll(".pergola3d__ar-desktop, .pergola3d__ar-mobile")
+      .forEach((label) => { label.textContent = "ZOBACZ w AR"; });
+    stage.insertBefore(arButton, toggleBtn);
+  }
 
   const openPanel = () => {
     panel.classList.add("is-open");
     toggleBtn.setAttribute("aria-expanded", "true");
+    ignoreWindowScrollUntil = performance.now() + 700;
     // Render musi zostać w całości widoczny nad panelem (max 42vh) —
     // dosuwamy stronę tak, by kadr 3D zmieścił się w wolnej przestrzeni.
     const sheetHeight = window.innerHeight * 0.42;
@@ -321,6 +332,14 @@ if (mount) {
   };
   toggleBtn.addEventListener("click", openPanel);
   closeBtn.addEventListener("click", closePanel);
+  // Scroll wewnątrz panelu nie bąbelkuje do window. Gdy użytkownik przewija
+  // całą stronę, zamykamy mobilny bottom sheet, żeby nie jechał za viewportem.
+  window.addEventListener("scroll", () => {
+    if (!window.matchMedia("(max-width: 900px)").matches) return;
+    if (!panel.classList.contains("is-open")) return;
+    if (performance.now() < ignoreWindowScrollUntil) return;
+    closePanel();
+  }, { passive: true });
   setupPergolaAR({ canvas, closeOptionsPanel: closePanel });
 
   /* ---------- Dodatkowe nogi (wybór boku → strzałki do przesuwania) ---------- */
