@@ -1,0 +1,12 @@
+# Blokada bezpośredniego dostępu do plików .json w panelu (np. auth.json).
+<FilesMatch "\.json$">
+  Require all denied
+</FilesMatch>
+
+# Fallback dla starszego Apache (2.2)
+<IfModule !mod_authz_core.c>
+  <FilesMatch "\.json$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
