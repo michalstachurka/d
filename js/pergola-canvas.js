@@ -22,15 +22,43 @@ function shadowTexture() {
 /** Delikatny splot tkaniny screen (mapa koloru): jasne tło z cienką, ciemniejszą
  *  siatką nitek. Mnożone przez kolor materiału daje wrażenie tkaniny, a nie
  *  gładkiej płyty. Krycie zapewnia sam materiał (bez dziur = z zewnątrz nie
- *  widać wnętrza). */
-function screenWeaveMap() {
+ *  widać wnętrza). `strength` = kontrast siatki: strona wewnętrzna dostaje
+ *  mocniejszy splot, żeby tkanina była czytelna także przy jasnych kolorach. */
+function screenWeaveMap(strength = 0.16) {
   const c = document.createElement("canvas");
   c.width = c.height = 32;
   const ctx = c.getContext("2d");
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, 32, 32);
-  ctx.strokeStyle = "rgba(0,0,0,0.16)";
+  ctx.strokeStyle = `rgba(0,0,0,${strength})`;
   ctx.lineWidth = 1;
+  for (let i = 0; i <= 32; i += 4) {
+    ctx.beginPath();
+    ctx.moveTo(i + 0.5, 0); ctx.lineTo(i + 0.5, 32);
+    ctx.moveTo(0, i + 0.5); ctx.lineTo(32, i + 0.5);
+    ctx.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(52, 34);
+  return t;
+}
+
+/** Alfa splotu dla WEWNĘTRZNEJ strony screenu: nitki są kryjące (biel),
+ *  a oczka między nimi przepuszczają widok (czerń). Z bliska widać splot,
+ *  z dystansu uśrednia się do ~połowicznej przezierności — tkanina jest
+ *  widoczna w swoim prawdziwym kolorze, ale prześwituje przez nią otoczenie. */
+function screenMeshAlpha() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, 32, 32);
+  ctx.strokeStyle = "#ffffff";
+  // Grubość nitek dobrana tak, by splot krył ~2/3 powierzchni: roleta od
+  // środka jest wyraźnie widoczna w swoim kolorze, ale NIE kryje w pełni —
+  // przez oczka prześwituje otoczenie (jak w realnym screenie ZIP).
+  ctx.lineWidth = 1.8;
   for (let i = 0; i <= 32; i += 4) {
     ctx.beginPath();
     ctx.moveTo(i + 0.5, 0); ctx.lineTo(i + 0.5, 32);
@@ -228,8 +256,10 @@ export function createPergolaCanvas(mountEl, initialParams) {
   // (FrontSide, więc każda widoczna z jednej strony):
   //  • screenMaterial   — strona ZEWNĘTRZNA: pełne krycie (z zewnątrz nie widać
   //    wnętrza pergoli),
-  //  • screenInnerMaterial — strona WEWNĘTRZNA: półprzezroczysta tkanina
-  //    (ze środka widać ją, ale prześwituje przez nią rozmyty widok na zewnątrz).
+  //  • screenInnerMaterial — strona WEWNĘTRZNA: siatka z realnymi oczkami
+  //    (alphaMap). Nitki są prawie kryjące i mają TEN SAM kolor tkaniny co
+  //    strona zewnętrzna (spójny kolor rolety), a między nitkami prześwituje
+  //    otoczenie — ze środka roleta jest widoczna, ale przezierna.
   // Splot (map) nadaje obu charakter tkaniny, a nie gładkiej płyty.
   const screenMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#c9b79c"),
@@ -242,12 +272,19 @@ export function createPergolaCanvas(mountEl, initialParams) {
     color: new THREE.Color("#c9b79c"),
     roughness: 0.92,
     metalness: 0,
-    map: screenWeaveMap(),
+    map: screenWeaveMap(0.42),
+    alphaMap: screenMeshAlpha(),
     side: THREE.FrontSide,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.85,
     depthWrite: false,
   });
+  // Strona wewnętrzna to strona ZACIENIONA (światło pada z zewnątrz), więc
+  // tkanina od środka jest ciemniejsza od elewacyjnej — ten sam kolor,
+  // przyciemniony. Dzięki temu roleta jest widoczna od środka nawet przy
+  // jasnych tkaninach, a kolory obu stron pozostają spójne.
+  const INNER_SHADE = 0.62;
+  screenInnerMaterial.color.multiplyScalar(INNER_SHADE);
   // Przeszklenia — tafla szkła: mocno przezroczysta, gładka, lekko chłodna.
   const glassMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color("#cddfe6"),
@@ -485,6 +522,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
       grp.add(new THREE.Mesh(geo, screenMaterial));        // widok Z ZEWNĄTRZ
       const innerMesh = new THREE.Mesh(geo, screenInnerMaterial); // widok ZE ŚRODKA
       innerMesh.rotation.y = Math.PI;                      // normalna do wnętrza
+      innerMesh.position.z = -0.004;                       // 4 mm do środka — bez migotania warstw
       grp.add(innerMesh);
       grp.scale.y = prog;
       grp.visible = vis;
@@ -654,7 +692,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
   slatMaterial.color.set(initialParams.slatColor);
   if (initialParams.screenColor) {
     screenMaterial.color.set(initialParams.screenColor);
-    screenInnerMaterial.color.set(initialParams.screenColor);
+    screenInnerMaterial.color.set(initialParams.screenColor).multiplyScalar(INNER_SHADE);
   }
   controls.autoRotate = initialParams.spin;
 
@@ -756,7 +794,7 @@ export function createPergolaCanvas(mountEl, initialParams) {
     stateRef.slatMaterial?.color.set(params.slatColor);
     if (params.screenColor) {
       screenMaterial.color.set(params.screenColor);
-      screenInnerMaterial.color.set(params.screenColor);
+      screenInnerMaterial.color.set(params.screenColor).multiplyScalar(INNER_SHADE);
     }
     if (stateRef.controls) stateRef.controls.autoRotate = params.spin;
     if (!params.spin && stateRef.slats) {
