@@ -92,6 +92,13 @@
     });
   });
 
+  /* ---------- Przycisk powrotu na początek ---------- */
+  const backToTop = $('#backToTop');
+  backToTop?.addEventListener('click', () => {
+    scrollToY(0);
+    backToTop.blur();
+  });
+
   /* ---------- Header: chowanie przy scrollu ---------- */
   const header = $('#header');
   let lastY = window.scrollY;
@@ -100,6 +107,12 @@
     header.classList.toggle('is-scrolled', y > 40);
     if (y > 500 && y > lastY + 4) header.classList.add('is-hidden');
     else if (y < lastY - 4 || y < 500) header.classList.remove('is-hidden');
+    if (backToTop) {
+      const visible = y > 500;
+      backToTop.classList.toggle('is-visible', visible);
+      backToTop.setAttribute('aria-hidden', String(!visible));
+      backToTop.tabIndex = visible ? 0 : -1;
+    }
     lastY = y;
   };
 
